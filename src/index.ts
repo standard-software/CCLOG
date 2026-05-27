@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { getLogDirForProject } from './lib/pathResolver.js';
 import { readJsonl } from './lib/jsonlReader.js';
 import { buildPairs } from './lib/pairBuilder.js';
@@ -15,8 +16,11 @@ import {
 } from './lib/markdownWriter.js';
 import type { CliOptions, Pair } from './lib/types.js';
 
+const PKG_VERSION = (createRequire(import.meta.url)('../package.json') as { version: string }).version;
+
 type ParseResult =
   | { kind: 'help' }
+  | { kind: 'version' }
   | { kind: 'error'; msg: string }
   | { kind: 'ok'; opts: CliOptions };
 
@@ -46,6 +50,8 @@ function parseArgs(argv: string[]): ParseResult {
       verbose = true;
     } else if (a === '--init-template') {
       initTemplate = true;
+    } else if (a === '--version' || a === '-V') {
+      return { kind: 'version' };
     } else if (a === '--help' || a === '-h') {
       return { kind: 'help' };
     } else if (a.startsWith('--')) {
@@ -94,6 +100,7 @@ Options:
                          edit the template without touching the global install.
   --dry-run              Don't write files; report what would be written.
   -v, --verbose          Verbose logging.
+  -V, --version          Show version and exit.
   -h, --help             Show this help.
 
 Whether the progress section appears in output is determined by the
@@ -433,6 +440,7 @@ async function initTemplate(opts: CliOptions): Promise<void> {
 async function main(): Promise<void> {
   const r = parseArgs(process.argv);
   if (r.kind === 'help') { printHelp(); return; }
+  if (r.kind === 'version') { console.log(PKG_VERSION); return; }
   if (r.kind === 'error') {
     console.error(r.msg);
     printHelp();

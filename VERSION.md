@@ -2,6 +2,10 @@
 
 ## Version
 
+### 1.1.0
+#### 2026/05/28(Thu)
+- add `--version` / `-V` to print version and exit (`-v` remains `--verbose`)
+
 ### 1.0.0
 #### 2026/05/27(Wed)
 - initial release
