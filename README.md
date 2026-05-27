@@ -51,7 +51,8 @@ Options:
                          rewrite cclog.config.json to use the local copy
                          (lets you edit it without touching the global install).
   --dry-run              Don't write files; report what would be written.
-  -v, --verbose          Verbose logging.
+  --verbose              Verbose logging.
+  -v, -V, --version      Show version and exit.
   -h, --help             Show this help.
 ```
 

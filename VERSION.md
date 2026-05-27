@@ -2,6 +2,11 @@
 
 ## Version
 
+### 1.1.1
+#### 2026/05/28(Thu)
+- `-v` now prints version (matching `node -v` / `npm -v` convention)
+- verbose mode is `--verbose` long form only (no short alias)
+
 ### 1.1.0
 #### 2026/05/28(Thu)
 - add `--version` / `-V` to print version and exit (`-v` remains `--verbose`)

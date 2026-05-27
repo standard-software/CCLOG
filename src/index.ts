@@ -46,11 +46,11 @@ function parseArgs(argv: string[]): ParseResult {
       includeTools = true;
     } else if (a === '--dry-run') {
       dryRun = true;
-    } else if (a === '--verbose' || a === '-v') {
+    } else if (a === '--verbose') {
       verbose = true;
     } else if (a === '--init-template') {
       initTemplate = true;
-    } else if (a === '--version' || a === '-V') {
+    } else if (a === '--version' || a === '-v' || a === '-V') {
       return { kind: 'version' };
     } else if (a === '--help' || a === '-h') {
       return { kind: 'help' };
@@ -99,8 +99,8 @@ Options:
                          cclog.config.json to point at the local copy. Lets you
                          edit the template without touching the global install.
   --dry-run              Don't write files; report what would be written.
-  -v, --verbose          Verbose logging.
-  -V, --version          Show version and exit.
+  --verbose              Verbose logging.
+  -v, -V, --version      Show version and exit.
   -h, --help             Show this help.
 
 Whether the progress section appears in output is determined by the
