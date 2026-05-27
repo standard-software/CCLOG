@@ -10,6 +10,11 @@ build/
 .npm/
 .pnpm-store/
 
+# Secrets (npm tokens etc.) — must never be committed
+.env
+.env.*
+.npmrc
+
 # cclog runtime artifacts (per-user, never commit)
 CCLOG/
 CCLogs/
