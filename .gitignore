@@ -1,0 +1,21 @@
+.vscode/
+.claude
+
+# Node / TypeScript
+node_modules/
+dist/
+build/
+*.log
+*.tsbuildinfo
+.npm/
+.pnpm-store/
+
+# cclog runtime artifacts (per-user, never commit)
+CCLOG/
+CCLogs/
+_test_out/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp

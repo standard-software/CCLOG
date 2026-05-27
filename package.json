@@ -1,0 +1,28 @@
+{
+  "name": "cclog",
+  "version": "0.1.0",
+  "description": "Export Claude Code session logs (JSONL) to CLAUDE_TODO_DONE.md style Markdown.",
+  "type": "module",
+  "bin": {
+    "cclog": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "prepare": "tsc"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}
