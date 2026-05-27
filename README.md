@@ -43,6 +43,9 @@ Options:
                          instead of the aggregated CCLOG_ALL.md.
   --include-tools        Dump tool input/output as full JSON (requires a
                          template that contains %Progress%).
+  --init-template        Copy the bundled template into <out>/templates/ and
+                         rewrite cclog.config.json to use the local copy
+                         (lets you edit it without touching the global install).
   --dry-run              Don't write files; report what would be written.
   -v, --verbose          Verbose logging.
   -h, --help             Show this help.
@@ -98,6 +101,28 @@ A template can use the following placeholders:
 
 If your template contains `%Progress%`, the section is rendered;
 otherwise tool calls are omitted.
+
+#### Customizing a template
+
+To edit a template without touching the globally-installed cclog files,
+run:
+
+```bash
+cclog --init-template
+```
+
+This copies the template currently set in `cclog.config.json` (or the
+English default if no config exists) into `CCLOG/templates/` and rewrites
+the config to point at the local copy:
+
+```diff
+- "template": "templates/japanese.md"
++ "template": "CCLOG/templates/japanese.md"
+```
+
+After that, edit `CCLOG/templates/japanese.md` directly. Re-running
+`--init-template` when the destination already exists prints an error
+and does not overwrite, but still re-applies the config rewrite.
 
 ## Output format
 
