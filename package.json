@@ -1,22 +1,40 @@
 {
-  "name": "cclog",
+  "private": false,
+  "name": "@standard-software/cclog",
   "version": "0.1.0",
-  "description": "Export Claude Code session logs (JSONL) to CLAUDE_TODO_DONE.md style Markdown.",
+  "description": "Export Claude Code session logs (JSONL) to readable Markdown.",
   "type": "module",
   "bin": {
     "cclog": "./dist/index.js"
   },
   "files": [
     "dist",
-    "README.md"
+    "templates",
+    "README.md",
+    "README_Japanese.md",
+    "LICENSE"
   ],
   "scripts": {
     "start": "tsx src/index.ts",
     "dev": "tsx src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "prepare": "tsc"
+    "prepublishOnly": "tsc"
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/standard-software/CCLOG.git"
+  },
+  "keywords": [],
+  "author": "Satoshi Yamamoto <standard.software.net@gmail.com> (https://www.facebook.com/stndardsoftware/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/standard-software/CCLOG/issues"
+  },
+  "homepage": "https://github.com/standard-software/CCLOG#readme",
   "engines": {
     "node": ">=18"
   },
@@ -24,5 +42,6 @@
     "@types/node": "^20.11.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0"
-  }
+  },
+  "dependencies": {}
 }
