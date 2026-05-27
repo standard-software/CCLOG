@@ -49,5 +49,4 @@ export interface CliOptions {
   includeTools: boolean;
   dryRun: boolean;
   verbose: boolean;
-  watch: boolean;
 }

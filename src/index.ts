@@ -28,7 +28,6 @@ function parseArgs(argv: string[]): ParseResult {
   let includeTools = false;
   let dryRun = false;
   let verbose = false;
-  let watch = false;
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -44,8 +43,6 @@ function parseArgs(argv: string[]): ParseResult {
       dryRun = true;
     } else if (a === '--verbose' || a === '-v') {
       verbose = true;
-    } else if (a === '--watch') {
-      watch = true;
     } else if (a === '--help' || a === '-h') {
       return { kind: 'help' };
     } else if (a.startsWith('--')) {
@@ -67,7 +64,6 @@ function parseArgs(argv: string[]): ParseResult {
       includeTools,
       dryRun,
       verbose,
-      watch,
     },
   };
 }
@@ -79,7 +75,7 @@ Usage:
   cclog [project-path] [options]
 
 Arguments:
-  project-path           Project directory (defaults to current working directory).
+  project-path           Project directory (defaults to the current directory).
 
 Options:
   --out <dir>            Output directory (default: <project-path>/CCLOG).
@@ -87,7 +83,6 @@ Options:
                          instead of the aggregated CCLOG/CCLOG_ALL.md.
   --include-tools        When the active template contains a progress section,
                          dump tool input/output as full JSON instead of summaries.
-  --watch                Resident mode (not yet implemented).
   --dry-run              Don't write files; report what would be written.
   -v, --verbose          Verbose logging.
   -h, --help             Show this help.
@@ -366,11 +361,6 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   const opts = r.opts;
-
-  if (opts.watch) {
-    console.error('--watch is not implemented yet.');
-    process.exit(2);
-  }
 
   await processProject(opts);
 }
