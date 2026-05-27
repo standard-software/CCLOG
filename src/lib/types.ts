@@ -49,4 +49,5 @@ export interface CliOptions {
   includeTools: boolean;
   dryRun: boolean;
   verbose: boolean;
+  initTemplate: boolean;
 }

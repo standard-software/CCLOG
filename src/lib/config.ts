@@ -7,7 +7,7 @@ import { DEFAULT_TEMPLATE } from './templates.js';
 // Used so a relative "template" path in the config can first be looked
 // up against the shipped templates/ dir before falling back to the
 // project's own CCLOG/.
-const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+export const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 export interface CclogConfig {
   extraCwds: string[];
@@ -104,10 +104,13 @@ async function resolveTemplate(
 
   // Relative path: try cclog's package dir first (so the shipped
   // templates/japanese.md works without copying it everywhere), then
-  // fall back to the project's own CCLOG/ next to the config file.
+  // fall back to the project's own CCLOG/ next to the config file,
+  // and finally the project root (so an ejected template written as
+  // "CCLOG/templates/japanese.md" by --init-template also resolves).
   const candidates = [
     path.join(PACKAGE_ROOT, raw),
     path.join(configDir, raw),
+    path.join(path.dirname(configDir), raw),
   ];
   for (const p of candidates) {
     try {

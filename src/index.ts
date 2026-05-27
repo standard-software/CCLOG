@@ -4,7 +4,7 @@ import path from 'node:path';
 import { getLogDirForProject } from './lib/pathResolver.js';
 import { readJsonl } from './lib/jsonlReader.js';
 import { buildPairs } from './lib/pairBuilder.js';
-import { loadConfig } from './lib/config.js';
+import { loadConfig, PACKAGE_ROOT, CONFIG_FILE_NAME } from './lib/config.js';
 import {
   formatPair,
   buildSessionFileHeader,
@@ -28,6 +28,7 @@ function parseArgs(argv: string[]): ParseResult {
   let includeTools = false;
   let dryRun = false;
   let verbose = false;
+  let initTemplate = false;
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -43,6 +44,8 @@ function parseArgs(argv: string[]): ParseResult {
       dryRun = true;
     } else if (a === '--verbose' || a === '-v') {
       verbose = true;
+    } else if (a === '--init-template') {
+      initTemplate = true;
     } else if (a === '--help' || a === '-h') {
       return { kind: 'help' };
     } else if (a.startsWith('--')) {
@@ -64,6 +67,7 @@ function parseArgs(argv: string[]): ParseResult {
       includeTools,
       dryRun,
       verbose,
+      initTemplate,
     },
   };
 }
@@ -83,6 +87,11 @@ Options:
                          instead of the aggregated CCLOG/CCLOG_ALL.md.
   --include-tools        When the active template contains a progress section,
                          dump tool input/output as full JSON instead of summaries.
+  --init-template        Copy the currently-configured template (or the English
+                         default if no config exists) from cclog's install
+                         location into <out>/templates/ and rewrite
+                         cclog.config.json to point at the local copy. Lets you
+                         edit the template without touching the global install.
   --dry-run              Don't write files; report what would be written.
   -v, --verbose          Verbose logging.
   -h, --help             Show this help.
@@ -352,6 +361,75 @@ async function processProject(opts: CliOptions): Promise<void> {
   console.log(`Done. ${items.length} pair(s) total [${result}]${opts.dryRun ? ' (dry run)' : ''}.`);
 }
 
+const DEFAULT_TEMPLATE_REL = 'templates/english.md';
+
+async function initTemplate(opts: CliOptions): Promise<void> {
+  const configPath = path.join(opts.outDir, CONFIG_FILE_NAME);
+
+  // Read existing config as raw JSON so we preserve unknown fields and
+  // can see the original "template" string (loadConfig only returns
+  // resolved template content, not the path).
+  let rawConfig: Record<string, unknown> = {};
+  try {
+    const text = await fs.readFile(configPath, 'utf-8');
+    const parsed = JSON.parse(text);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      rawConfig = parsed as Record<string, unknown>;
+    }
+  } catch (e: unknown) {
+    const err = e as NodeJS.ErrnoException;
+    if (err.code !== 'ENOENT') {
+      // Malformed JSON etc. — warn but proceed with empty config.
+      console.warn(`Warning: could not read ${configPath} (${err.message ?? err.code}). Starting with empty config.`);
+    }
+  }
+
+  const currentTemplate = typeof rawConfig.template === 'string' && rawConfig.template.trim()
+    ? rawConfig.template
+    : DEFAULT_TEMPLATE_REL;
+
+  const baseName = path.basename(currentTemplate);
+  const sourcePath = path.join(PACKAGE_ROOT, 'templates', baseName);
+
+  try {
+    await fs.stat(sourcePath);
+  } catch {
+    console.error(`Error: source template not found in cclog install: ${sourcePath}`);
+    console.error(`(Derived from config template "${currentTemplate}".)`);
+    process.exit(1);
+  }
+
+  const destDir = path.join(opts.outDir, 'templates');
+  const destPath = path.join(destDir, baseName);
+  await fs.mkdir(destDir, { recursive: true });
+
+  let copied = false;
+  try {
+    await fs.stat(destPath);
+    console.error(`Error: ${destPath} already exists. Skipping copy.`);
+  } catch {
+    await fs.copyFile(sourcePath, destPath);
+    console.log(`Copied: ${sourcePath}`);
+    console.log(`     -> ${destPath}`);
+    copied = true;
+  }
+
+  // Rewrite config template field as "<outDirBasename>/templates/<name>",
+  // resolved relative to the project root by the resolver.
+  const outBase = path.basename(opts.outDir);
+  const newTemplate = `${outBase}/templates/${baseName}`.replaceAll('\\', '/');
+  rawConfig.template = newTemplate;
+
+  await fs.mkdir(opts.outDir, { recursive: true });
+  await fs.writeFile(configPath, JSON.stringify(rawConfig, null, 2) + '\n', 'utf-8');
+  console.log(`Updated: ${configPath}`);
+  console.log(`     template: "${newTemplate}"`);
+
+  if (!copied) {
+    process.exit(1);
+  }
+}
+
 async function main(): Promise<void> {
   const r = parseArgs(process.argv);
   if (r.kind === 'help') { printHelp(); return; }
@@ -361,6 +439,11 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   const opts = r.opts;
+
+  if (opts.initTemplate) {
+    await initTemplate(opts);
+    return;
+  }
 
   await processProject(opts);
 }
