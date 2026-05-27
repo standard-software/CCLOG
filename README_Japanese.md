@@ -4,7 +4,7 @@
 
 Claude Code のセッションログ (JSONL) を、読みやすい 1 つの Markdown ファイルに書き出すツールです。
 
-`cclog` は Claude Code が `~/.claude/projects/<エンコードされたカレントディレクトリ>/`
+`cclog` は Claude Code が `~/.claude/projects/<プロジェクトパスをエンコードしたフォルダ名>/`
 配下に書き出している JSONL を読み込み、プロジェクト配下に `CCLOG_ALL.md`
 (またはセッションごとのファイル) を生成します。出力は実行のたびに再生成
 されますが、内容が変わらないときはファイルを触りません。追記だけで済む

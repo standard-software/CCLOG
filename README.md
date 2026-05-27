@@ -5,7 +5,7 @@
 Export Claude Code session logs (JSONL) to a single readable Markdown file.
 
 `cclog` reads the JSONL session logs that Claude Code writes under
-`~/.claude/projects/<encoded current directory>/` and renders them as `CCLOG_ALL.md`
+`~/.claude/projects/<encoded project path>/` and renders them as `CCLOG_ALL.md`
 (or one file per session) in your project. The output is regenerated
 on every run, but the file is only modified when its content would
 actually change — and when the new content is a strict append, only
