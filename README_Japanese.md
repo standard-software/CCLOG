@@ -1,0 +1,139 @@
+# cclog
+
+**Language:** [English](README.md)
+
+Claude Code のセッションログ (JSONL) を、読みやすい 1 つの Markdown ファイルに書き出すツールです。
+
+`cclog` は Claude Code が `~/.claude/projects/<エンコードされたカレントディレクトリ>/`
+配下に書き出している JSONL を読み込み、プロジェクト配下に `CCLOG_ALL.md`
+(またはセッションごとのファイル) を生成します。出力は実行のたびに再生成
+されますが、内容が変わらないときはファイルを触りません。追記だけで済む
+場合は末尾だけを追記するので、エディタが先頭から再読込することもありません。
+
+## インストール
+
+```bash
+npm install -g cclog
+```
+
+## 使い方
+
+Claude Code を使っているプロジェクトディレクトリで実行するだけです。
+
+```bash
+cd /path/to/your/project
+cclog
+```
+
+そのプロジェクトの全セッション、全 Q&A ペアを時系列に並べた
+`CCLOG/CCLOG_ALL.md` が生成されます。
+
+### オプション
+
+```
+cclog [project-path] [options]
+
+引数:
+  project-path           対象のプロジェクトディレクトリ (省略時はカレントディレクトリ)。
+
+オプション:
+  --out <dir>            出力先ディレクトリ (デフォルト: <project-path>/CCLOG)。
+  --per-session          1 セッション 1 ファイル (CCLOG_<sessionId>.md) で
+                         出力します (デフォルトは集約版 CCLOG_ALL.md)。
+  --include-tools        ツール呼び出しの input/output を JSON で丸ごと出力します
+                         (テンプレートに %Progress% が含まれている場合のみ有効)。
+  --dry-run              書き込みを行わず、何を書く予定かだけ表示します。
+  -v, --verbose          詳細ログを出力します。
+  -h, --help             ヘルプを表示します。
+```
+
+## 設定
+
+出力ディレクトリ配下に `cclog.config.json`
+(`<project>/CCLOG/cclog.config.json`) を置くと挙動を変えられます。
+
+```json
+{
+  "extraCwds": [
+    "C:\\Users\\you\\projects\\another-project",
+    "/home/you/projects/another-project"
+  ],
+  "extraLogDirs": [],
+  "recursive": false,
+  "includeSidechain": false,
+  "template": "templates/japanese.md"
+}
+```
+
+Windows ではバックスラッシュをエスケープしたパス (`C:\\Users\\...`)、
+Ubuntu / macOS ではスラッシュ区切りのパス (`/home/you/...`) を使ってください。
+
+| フィールド          | 説明                                                                       |
+|---------------------|----------------------------------------------------------------------------|
+| `extraCwds`         | このログにマージしたい、追加のプロジェクトディレクトリ。                     |
+| `extraLogDirs`      | `~/.claude/projects/...` を直接指定する形式の追加ログディレクトリ。          |
+| `recursive`         | `true` にすると各ログディレクトリのサブフォルダ (サブエージェント等) も走査。 |
+| `includeSidechain`  | `true` にするとサブエージェント / サイドチェーンのペアも出力に含めます。      |
+| `template`          | Markdown テンプレートのパス。cclog 同梱の `templates/` を先に探索し、なければ CCLOG ディレクトリを探します。 |
+
+### テンプレート
+
+同梱テンプレートは 4 種類です:
+
+- `templates/english.md` (デフォルト)
+- `templates/japanese.md`
+- `templates/english-with-progress.md`
+- `templates/japanese-with-progress.md`
+
+テンプレートでは以下のプレースホルダが使えます:
+
+| プレースホルダ | 置換内容                                          |
+|----------------|---------------------------------------------------|
+| `%DateTime%`   | 質問のタイムスタンプ (`YYYY/MM/DD Day HH:MM:SS`)  |
+| `%SessionId%`  | セッション UUID                                   |
+| `%Question%`   | ユーザのメッセージ                                |
+| `%Answer%`     | Claude の応答                                     |
+| `%Progress%`   | (任意) Q と A の間のツール呼び出し                |
+
+テンプレートに `%Progress%` が含まれていれば進捗セクションが出力され、
+含まれていなければツール呼び出しは省略されます。
+
+## 出力フォーマット
+
+`CCLOG_ALL.md` は Q&A ブロックがフラットに時系列で並びます。各ブロックは
+テンプレートに従って整形されます (デフォルトの英語テンプレート例):
+
+```markdown
+# 2026/05/27 Wed 11:03:49
+
+Session: ec5e9974-80a6-4baa-a701-0e29589674da
+
+## Question
+
+Hello, can you help me with X?
+
+## Answer
+<!--
+Sure, here's how...
+-->
+
+----------------------------------------
+```
+
+`<!-- -->` で回答を囲んでいる主な理由は、Claude の回答に含まれる
+Markdown 書式 (見出し・リスト・コードブロックなど) がテンプレートの
+Markdown 構造とぶつかるのを防ぐためです。コメントで囲むことで
+テンプレート側のレイアウトが崩れません。副次的な効果として、
+Markdown ビューアで長い回答が畳まれて表示されるので、プレビューが
+回答に埋め尽くされにくくなります。常に展開して見たい場合は
+テンプレートから外してください。
+
+## 注意事項
+
+- 出力は毎回完全に再生成されます。`~/.claude/projects/...` 配下の
+  セッションログを削除すると、次回 `cclog` 実行時に `CCLOG_ALL.md` から
+  該当ペアも消えます。
+
+## ライセンス
+
+MIT
