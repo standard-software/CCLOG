@@ -14,8 +14,12 @@ the tail is appended so editors don't reload from the top.
 ## Install
 
 ```bash
-npm install -g cclog
+npm install -g @standard-software/cclog
 ```
+
+The package is published on npm as
+[`@standard-software/cclog`](https://www.npmjs.com/package/@standard-software/cclog).
+The installed CLI command is just `cclog`.
 
 ## Usage
 

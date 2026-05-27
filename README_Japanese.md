@@ -13,8 +13,12 @@ Claude Code のセッションログ (JSONL) を、読みやすい 1 つの Mark
 ## インストール
 
 ```bash
-npm install -g cclog
+npm install -g @standard-software/cclog
 ```
+
+npm 上のパッケージ名は
+[`@standard-software/cclog`](https://www.npmjs.com/package/@standard-software/cclog)
+です。インストール後の CLI コマンド名は `cclog` です。
 
 ## 使い方
 
