@@ -2,6 +2,11 @@
 
 ## Version
 
+### 1.1.2
+#### 2026/05/29(Fri)
+- fix: answer slot was empty when the assistant chain ended on a non-text block (e.g. session interrupted mid `tool_use`); the most recent text-containing assistant response is now used as the answer instead
+  - root cause: `finalAssistantEntry` always took the very last assistant entry in the chain, including thinking-only / tool_use-only ones whose text content is empty
+
 ### 1.1.1
 #### 2026/05/28(Thu)
 - `-v` now prints version (matching `node -v` / `npm -v` convention)

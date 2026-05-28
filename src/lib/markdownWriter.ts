@@ -75,6 +75,21 @@ export function formatPair(pair: Pair, opts: FormatOptions, sessionId?: string):
   if (pair.finalAssistantEntry) {
     answerText = extractLastAssistantText(pair.finalAssistantEntry.message.content) ?? '';
   }
+  // The chain may end with a non-text assistant block (tool_use or
+  // thinking only) — e.g. the session was interrupted mid tool call.
+  // Fall back to the most recent assistant entry in progressEntries
+  // that actually had a text response so the answer slot isn't empty.
+  if (!answerText) {
+    for (let i = pair.progressEntries.length - 1; i >= 0; i--) {
+      const entry = pair.progressEntries[i];
+      if (entry.type !== 'assistant') continue;
+      const t = extractLastAssistantText(entry.message.content);
+      if (t) {
+        answerText = t;
+        break;
+      }
+    }
+  }
   const safeAnswer = answerText.replaceAll('-->', '-- >');
 
   return renderTemplate(tpl, {
