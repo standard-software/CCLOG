@@ -2,6 +2,13 @@
 
 ## Version
 
+### 1.3.0
+#### 2026/06/09(Tue)
+- automatically back up `CCLOG_ALL.md` / `CCLOG_<sessionId>.md` before a **full rewrite** overwrites it
+  - the existing file is copied to `<out>/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<hostname>/` immediately before the overwrite, so a large non-append change never silently discards the previous Markdown
+  - triggers only on the `rewrite` path — i.e. when the regenerated body differs from the existing one somewhere other than a pure tail append. Typical causes: running cclog on a different PC where the synced `.md` no longer matches the local `.jsonl`, or changing the template
+  - `create` / `noop` / `append` never back up; the timestamped folder is shared per run and created lazily, so unchanged runs leave no trace
+
 ### 1.2.2
 #### 2026/06/08(Mon)
 - `--backup-jsonl` is now a standalone action: it copies the raw source `.jsonl` logs and exits **without** regenerating `CCLOG_ALL.md` / per-session Markdown

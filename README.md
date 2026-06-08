@@ -205,6 +205,14 @@ answers expanded by default.
 - The output is fully regenerated on every run; if you delete a session
   log under `~/.claude/projects/...`, the corresponding pairs disappear
   from `CCLOG_ALL.md` on the next run.
+- **Pre-overwrite backup of the Markdown.** When a run would *fully
+  rewrite* an existing `CCLOG_*.md` (a non-append change — e.g. you ran
+  cclog on a different PC where the synced `.md` no longer matches the
+  local `.jsonl`, or you changed the template), the existing file is first
+  copied to `CCLOG/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<hostname>/` so
+  the previous version is never lost. A plain append (the normal case),
+  an unchanged run, or a first-time create never produces a backup, so
+  these folders only appear when a real overwrite happened.
 
 ## License
 
