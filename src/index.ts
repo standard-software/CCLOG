@@ -97,14 +97,14 @@ Options:
                          location into <out>/templates/ and rewrite
                          cclog.config.json to point at the local copy. Lets you
                          edit the template without touching the global install.
-  --backup-jsonl         Copy the discovered source .jsonl logs into
-                         <out>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>_<hostname>/
-                         before exporting. Lets you preserve the raw session
-                         logs locally (e.g. before swapping PCs, since the
-                         source path encoding — and thus the log location —
-                         changes per machine). The folder name embeds the
-                         machine name (os.hostname()) so backups stay
-                         attributable per PC.
+  --backup-jsonl         Back up only: copy the discovered source .jsonl logs
+                         into <out>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>_<hostname>/
+                         and exit WITHOUT writing CCLOG_ALL.md / per-session
+                         files. Lets you preserve the raw session logs locally
+                         (e.g. before swapping PCs, since the source path
+                         encoding — and thus the log location — changes per
+                         machine). The folder name embeds the machine name
+                         (os.hostname()) so backups stay attributable per PC.
   --dry-run              Don't write files; report what would be written.
   --verbose              Verbose logging.
   -v, -V, --version      Show version and exit.
@@ -362,20 +362,24 @@ async function processProject(opts: CliOptions): Promise<void> {
     return;
   }
 
-  if (!opts.dryRun) {
-    await ensureDir(opts.outDir);
-    await cleanupLegacyStateFiles(opts.outDir, opts.verbose);
-  }
-
+  // --backup-jsonl is a standalone action: copy the raw source logs and
+  // exit, without regenerating CCLOG_ALL.md / per-session Markdown.
   if (opts.backupJsonl) {
     if (opts.dryRun) {
       console.log(
         `(dry run) would back up ${files.length} jsonl file(s) to `
-        + `${path.join(opts.outDir, BACKUP_DIR_NAME, backupFolderName(new Date()))}`,
+        + `${path.join(opts.outDir, BACKUP_DIR_NAME, backupFolderName(new Date()))} `
+        + `(backup only; no Markdown export)`,
       );
     } else {
       await backupJsonlFiles(files, opts.outDir, opts.verbose);
     }
+    return;
+  }
+
+  if (!opts.dryRun) {
+    await ensureDir(opts.outDir);
+    await cleanupLegacyStateFiles(opts.outDir, opts.verbose);
   }
 
   const sessions = await readAllSessions(files, config.includeSidechain);
