@@ -122,7 +122,11 @@ section). Set "template" in CCLOG/cclog.config.json to one that contains:
 Note: the output is regenerated from JSONL on every run, but the file is
 only modified when its content would actually change. When the new
 content is a strict append on top of the existing file, only the tail
-is appended (so editors don't reload from the top).
+is appended (so editors don't reload from the top). When a full rewrite
+is required instead (a non-append change — e.g. a different PC
+environment or a template change), the existing CCLOG_*.md is first
+copied to <out>/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<hostname>/ so the
+pre-overwrite version is never lost. create/noop/append never back up.
 `);
 }
 
@@ -253,6 +257,7 @@ function backupFolderName(d: Date): string {
 }
 
 const BACKUP_DIR_NAME = 'backup_jsonl';
+const MD_BACKUP_DIR_NAME = 'backup_CCLOG_md';
 
 // Copy every discovered source .jsonl into
 // <outDir>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>_<hostname>/ so the raw logs
@@ -387,8 +392,17 @@ async function processProject(opts: CliOptions): Promise<void> {
     template: config.template,
   };
 
+  // Pre-overwrite backup target for this run: existing CCLOG_*.md files are
+  // copied here right before a full rewrite (non-append change) overwrites
+  // them. Computed once so every file rewritten in this run shares one
+  // timestamped folder; the folder itself is created lazily on first use.
+  const mdBackupDir = opts.dryRun
+    ? undefined
+    : path.join(opts.outDir, MD_BACKUP_DIR_NAME, backupFolderName(new Date()));
+
   if (opts.perSession) {
     let totalPairs = 0;
+    let rewriteCount = 0;
     for (const s of sessions) {
       const filePath = path.join(opts.outDir, `CCLOG_${s.sessionId}.md`);
       const skipNote = s.skippedLines ? ` [${s.skippedLines} unparseable lines]` : '';
@@ -405,10 +419,14 @@ async function processProject(opts: CliOptions): Promise<void> {
 
       let result: WriteResult | 'dry-run' = 'dry-run';
       if (!opts.dryRun) {
-        result = await smartWrite(filePath, content);
+        result = await smartWrite(filePath, content, mdBackupDir);
       }
+      if (result === 'rewrite') rewriteCount++;
       console.log(`[${s.sessionId.slice(0, 8)}] ${s.allPairs.length} pair(s) [${result}]${skipNote}`);
       totalPairs += s.allPairs.length;
+    }
+    if (rewriteCount > 0 && mdBackupDir) {
+      console.log(`Backed up ${rewriteCount} pre-overwrite md file(s) to ${mdBackupDir}`);
     }
     console.log(`Done. ${totalPairs} pair(s) total${opts.dryRun ? ' (dry run)' : ''}.`);
     return;
@@ -438,12 +456,15 @@ async function processProject(opts: CliOptions): Promise<void> {
   const filePath = path.join(opts.outDir, ALL_IN_ONE_FILE);
   let result: WriteResult | 'dry-run' = 'dry-run';
   if (!opts.dryRun) {
-    result = await smartWrite(filePath, content);
+    result = await smartWrite(filePath, content, mdBackupDir);
   }
 
   for (const s of sessions) {
     const skipNote = s.skippedLines ? ` [${s.skippedLines} unparseable lines]` : '';
     console.log(`[${s.sessionId.slice(0, 8)}] ${s.allPairs.length} pair(s)${skipNote}`);
+  }
+  if (result === 'rewrite' && mdBackupDir) {
+    console.log(`Backed up 1 pre-overwrite md file to ${mdBackupDir}`);
   }
   console.log(`Done. ${items.length} pair(s) total [${result}]${opts.dryRun ? ' (dry run)' : ''}.`);
 }

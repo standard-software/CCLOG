@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import {
   formatUserText,
   extractLastAssistantText,
@@ -196,6 +197,14 @@ function splitHeaderBody(s: string): { header: string; body: string } | null {
   return { header: s.slice(0, idx + 1), body: s.slice(idx + 1) };
 }
 
+// Copy the about-to-be-overwritten file into backupDir (created lazily,
+// so no empty folder appears when nothing is rewritten). Used only on the
+// 'rewrite' path; create/noop/append never destroy existing content.
+async function backupBeforeOverwrite(filePath: string, backupDir: string): Promise<void> {
+  await fs.mkdir(backupDir, { recursive: true });
+  await fs.copyFile(filePath, path.join(backupDir, path.basename(filePath)));
+}
+
 /**
  * Write file content with minimal disturbance:
  *   - no existing file        -> create
@@ -206,8 +215,18 @@ function splitHeaderBody(s: string): { header: string; body: string } | null {
  * The header (everything before the first SEP line) is intentionally
  * ignored for comparison so that volatile fields like timestamps don't
  * force rewrites.
+ *
+ * When `backupDir` is given, the existing file is copied there (under its
+ * original name) immediately before a full rewrite overwrites it — so a
+ * large non-append change (different PC environment, template change, etc.)
+ * never silently discards the previous Markdown. create/noop/append do not
+ * back up: they either touch nothing or only append.
  */
-export async function smartWrite(filePath: string, newContent: string): Promise<WriteResult> {
+export async function smartWrite(
+  filePath: string,
+  newContent: string,
+  backupDir?: string,
+): Promise<WriteResult> {
   let existing: string;
   try {
     existing = await fs.readFile(filePath, 'utf-8');
@@ -223,6 +242,7 @@ export async function smartWrite(filePath: string, newContent: string): Promise<
   const eParts = splitHeaderBody(existing);
   const nParts = splitHeaderBody(newContent);
   if (!eParts || !nParts) {
+    if (backupDir) await backupBeforeOverwrite(filePath, backupDir);
     await fs.writeFile(filePath, newContent, 'utf-8');
     return 'rewrite';
   }
@@ -235,6 +255,7 @@ export async function smartWrite(filePath: string, newContent: string): Promise<
     await fs.appendFile(filePath, tail, 'utf-8');
     return 'append';
   }
+  if (backupDir) await backupBeforeOverwrite(filePath, backupDir);
   await fs.writeFile(filePath, newContent, 'utf-8');
   return 'rewrite';
 }
