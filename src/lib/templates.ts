@@ -9,14 +9,21 @@
 //                --per-session mode where it duplicates the filename)
 //   %Question%   the user's text
 //   %Progress%   bullet list of tool calls / intermediate assistant
-//                turns. Whether progress is rendered at all is decided
-//                by whether the template contains this placeholder —
-//                no extra CLI flag needed.
+//                turns, summarized (tool name + one key arg, result
+//                head only, thinking omitted).
+//   %ProgressFull%  same list, but with full tool input/output JSON and
+//                thinking blocks included. Use this OR %Progress%, not
+//                both.
 //   %Answer%     the last assistant text block (already escaped so
 //                "-->" sequences won't close the HTML comment early)
 //
-// The shipped templates/{english,japanese}{,-with-progress}.md are
-// drop-in alternatives; the in-code default below matches
+// Whether — and how verbosely — progress is rendered is decided purely
+// by which placeholder the template contains: none -> no progress,
+// %Progress% -> summarized, %ProgressFull% -> full dump. There is no CLI
+// flag for this.
+//
+// The shipped templates/{english,japanese}{,-with-progress,-with-progress-full}.md
+// are drop-in alternatives; the in-code default below matches
 // templates/english.md and is the fallback when nothing else loads.
 
 export const DEFAULT_TEMPLATE = `# %DateTime%
@@ -37,9 +44,18 @@ Session: %SessionId%
 `;
 
 export const PROGRESS_PLACEHOLDER = '%Progress%';
+export const PROGRESS_FULL_PLACEHOLDER = '%ProgressFull%';
 
-export function templateUsesProgress(tpl: string): boolean {
-  return tpl.includes(PROGRESS_PLACEHOLDER);
+export type ProgressMode = 'none' | 'summary' | 'full';
+
+/**
+ * Decide how the progress section should be rendered from the template
+ * alone. %ProgressFull% wins if both happen to be present.
+ */
+export function progressMode(tpl: string): ProgressMode {
+  if (tpl.includes(PROGRESS_FULL_PLACEHOLDER)) return 'full';
+  if (tpl.includes(PROGRESS_PLACEHOLDER)) return 'summary';
+  return 'none';
 }
 
 export function renderTemplate(tpl: string, vars: Record<string, string>): string {

@@ -9,7 +9,7 @@ import {
   formatToolResultSummary,
   toBlocks,
 } from './contentFormatter.js';
-import { DEFAULT_TEMPLATE, renderTemplate, templateUsesProgress } from './templates.js';
+import { DEFAULT_TEMPLATE, renderTemplate, progressMode } from './templates.js';
 import type { Pair, UserEntry, AssistantEntry, ContentBlock } from './types.js';
 
 const SEP = '----------------------------------------';
@@ -31,18 +31,21 @@ function formatTimestamp(iso: string): string {
 }
 
 export interface FormatOptions {
-  includeTools: boolean;
   /**
-   * Pair-block template. Whether the progress section is rendered is
-   * determined by whether this string contains the %Progress%
-   * placeholder — no separate flag.
+   * Pair-block template. Whether the progress section is rendered — and
+   * how verbosely — is determined entirely by which placeholder this
+   * string contains: %Progress% (summary), %ProgressFull% (full tool
+   * dump + thinking), or neither (no progress). There is no separate
+   * flag.
    */
   template?: string;
 }
 
 export function formatPair(pair: Pair, opts: FormatOptions, sessionId?: string): string {
   const tpl = opts.template ?? DEFAULT_TEMPLATE;
-  const wantProgress = templateUsesProgress(tpl);
+  const mode = progressMode(tpl);
+  const wantProgress = mode !== 'none';
+  const includeFull = mode === 'full';
 
   const ts = formatTimestamp(pair.questionEntry.timestamp);
 
@@ -57,7 +60,7 @@ export function formatPair(pair: Pair, opts: FormatOptions, sessionId?: string):
   const progressLines: string[] = [];
   if (wantProgress) {
     for (const entry of pair.progressEntries) {
-      progressLines.push(...progressLinesFor(entry, opts));
+      progressLines.push(...progressLinesFor(entry, includeFull));
     }
     if (pair.finalAssistantEntry) {
       const fa = pair.finalAssistantEntry;
@@ -66,7 +69,7 @@ export function formatPair(pair: Pair, opts: FormatOptions, sessionId?: string):
         if (line) progressLines.push(`- (assistant) ${line}`);
       }
       for (const tu of extractToolUses(fa.message.content)) {
-        progressLines.push(`- ${formatToolUseSummary(tu, opts.includeTools)}`);
+        progressLines.push(`- ${formatToolUseSummary(tu, includeFull)}`);
       }
     }
   }
@@ -92,23 +95,28 @@ export function formatPair(pair: Pair, opts: FormatOptions, sessionId?: string):
   }
   const safeAnswer = answerText.replaceAll('-->', '-- >');
 
+  // The template contains at most one of %Progress% / %ProgressFull%;
+  // providing both vars (same rendered text) means whichever is present
+  // gets filled and the other key is simply a no-op.
+  const progressText = progressLines.join('\n');
   return renderTemplate(tpl, {
     DateTime: ts,
     SessionId: sessionId ?? '',
     Question: questionText,
-    Progress: progressLines.join('\n'),
+    Progress: progressText,
+    ProgressFull: progressText,
     Answer: safeAnswer,
   });
 }
 
-function progressLinesFor(entry: UserEntry | AssistantEntry, opts: FormatOptions): string[] {
+function progressLinesFor(entry: UserEntry | AssistantEntry, includeFull: boolean): string[] {
   const lines: string[] = [];
   const content = entry.message?.content;
   if (content === undefined || content === null) return lines;
 
   if (entry.type === 'user') {
     for (const tr of extractToolResults(content)) {
-      lines.push(`- ${formatToolResultSummary(tr, opts.includeTools)}`);
+      lines.push(`- ${formatToolResultSummary(tr, includeFull)}`);
     }
     return lines;
   }
@@ -120,13 +128,13 @@ function progressLinesFor(entry: UserEntry | AssistantEntry, opts: FormatOptions
       const line = oneLine((b as { text: string }).text);
       if (line) lines.push(`- (assistant) ${line}`);
     } else if (b.type === 'tool_use') {
-      lines.push(`- ${formatToolUseSummary(b, opts.includeTools)}`);
+      lines.push(`- ${formatToolUseSummary(b, includeFull)}`);
     } else if (b.type === 'tool_result') {
-      lines.push(`- ${formatToolResultSummary(b, opts.includeTools)}`);
+      lines.push(`- ${formatToolResultSummary(b, includeFull)}`);
     } else if (b.type === 'image') {
       lines.push('- [Image]');
     } else if (b.type === 'thinking') {
-      if (opts.includeTools) {
+      if (includeFull) {
         const t = (b as { thinking?: unknown }).thinking;
         lines.push(`- [Thinking] ${oneLine(typeof t === 'string' ? t : '')}`);
       }

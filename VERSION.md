@@ -2,6 +2,14 @@
 
 ## Version
 
+### 1.2.0-beta.0
+#### 2026/06/08(Mon)
+- **breaking**: removed the `--include-tools` CLI flag. Progress verbosity is now driven entirely by the template, matching how the progress section's presence already worked:
+  - `%Progress%` → summarized tool calls (the old default progress output)
+  - `%ProgressFull%` → full tool input/output JSON + thinking blocks (the old `--include-tools` output)
+  - rationale: it was inconsistent to toggle the progress section via the template but its verbosity via a CLI flag
+- add templates `english-with-progress-full.md` / `japanese-with-progress-full.md` (use `%ProgressFull%`)
+
 ### 1.1.2
 #### 2026/05/29(Fri)
 - fix: answer slot was empty when the assistant chain ended on a non-text block (e.g. session interrupted mid `tool_use`); the most recent text-containing assistant response is now used as the answer instead

@@ -46,7 +46,6 @@ export interface CliOptions {
   projectPath: string;
   outDir: string;
   perSession: boolean;
-  includeTools: boolean;
   dryRun: boolean;
   verbose: boolean;
   initTemplate: boolean;

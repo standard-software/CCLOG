@@ -45,8 +45,6 @@ Options:
   --out <dir>            Output directory (default: <project-path>/CCLOG).
   --per-session          Write one file per session (CCLOG_<sessionId>.md)
                          instead of the aggregated CCLOG_ALL.md.
-  --include-tools        Dump tool input/output as full JSON (requires a
-                         template that contains %Progress%).
   --init-template        Copy the bundled template into <out>/templates/ and
                          rewrite cclog.config.json to use the local copy
                          (lets you edit it without touching the global install).
@@ -87,25 +85,35 @@ paths on Ubuntu/macOS (`/home/you/...`).
 
 ### Templates
 
-Four templates ship out of the box:
+Six templates ship out of the box:
 
 - `templates/english.md` (default)
 - `templates/japanese.md`
 - `templates/english-with-progress.md`
 - `templates/japanese-with-progress.md`
+- `templates/english-with-progress-full.md`
+- `templates/japanese-with-progress-full.md`
 
 A template can use the following placeholders:
 
-| Placeholder    | Replaced with                              |
-|----------------|--------------------------------------------|
-| `%DateTime%`   | Question timestamp (`YYYY/MM/DD Day HH:MM:SS`) |
-| `%SessionId%`  | The session UUID                           |
-| `%Question%`   | The user's message                         |
-| `%Answer%`     | Claude's reply                             |
-| `%Progress%`   | (optional) Tool calls between Q and A      |
+| Placeholder       | Replaced with                                            |
+|-------------------|----------------------------------------------------------|
+| `%DateTime%`      | Question timestamp (`YYYY/MM/DD Day HH:MM:SS`)            |
+| `%SessionId%`     | The session UUID                                          |
+| `%Question%`      | The user's message                                       |
+| `%Answer%`        | Claude's reply                                            |
+| `%Progress%`      | (optional) Tool calls between Q and A, **summarized**     |
+| `%ProgressFull%`  | (optional) Same, but full tool input/output JSON + thinking |
 
-If your template contains `%Progress%`, the section is rendered;
-otherwise tool calls are omitted.
+Whether — and how verbosely — the progress section is rendered is decided
+entirely by the template:
+
+- contains neither → tool calls are omitted;
+- contains `%Progress%` → summarized (tool name + key arg, result head only);
+- contains `%ProgressFull%` → full input/output JSON and thinking blocks.
+
+Use one of the two progress placeholders, not both. (There is no CLI flag
+for this — verbosity follows the template.)
 
 #### Customizing a template
 

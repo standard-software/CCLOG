@@ -29,7 +29,6 @@ function parseArgs(argv: string[]): ParseResult {
   let projectPath: string | null = null;
   let outDir: string | null = null;
   let perSession = false;
-  let includeTools = false;
   let dryRun = false;
   let verbose = false;
   let initTemplate = false;
@@ -42,8 +41,6 @@ function parseArgs(argv: string[]): ParseResult {
       outDir = v;
     } else if (a === '--per-session') {
       perSession = true;
-    } else if (a === '--include-tools') {
-      includeTools = true;
     } else if (a === '--dry-run') {
       dryRun = true;
     } else if (a === '--verbose') {
@@ -70,7 +67,6 @@ function parseArgs(argv: string[]): ParseResult {
       projectPath: finalProjectPath,
       outDir: finalOutDir,
       perSession,
-      includeTools,
       dryRun,
       verbose,
       initTemplate,
@@ -91,8 +87,6 @@ Options:
   --out <dir>            Output directory (default: <project-path>/CCLOG).
   --per-session          Write one file per session (CCLOG/CCLOG_<sessionId>.md)
                          instead of the aggregated CCLOG/CCLOG_ALL.md.
-  --include-tools        When the active template contains a progress section,
-                         dump tool input/output as full JSON instead of summaries.
   --init-template        Copy the currently-configured template (or the English
                          default if no config exists) from cclog's install
                          location into <out>/templates/ and rewrite
@@ -103,11 +97,14 @@ Options:
   -v, -V, --version      Show version and exit.
   -h, --help             Show this help.
 
-Whether the progress section appears in output is determined by the
-template (default English template has no progress section). To enable
-progress, set "template" in CCLOG/cclog.config.json to a template that
-contains %Progress%, e.g. templates/english-with-progress.md or
-templates/japanese-with-progress.md.
+Whether — and how verbosely — the progress section appears is determined
+entirely by the template (the default English template has no progress
+section). Set "template" in CCLOG/cclog.config.json to one that contains:
+  %Progress%      summarized tool calls (e.g. templates/english-with-progress.md
+                  or templates/japanese-with-progress.md)
+  %ProgressFull%  full tool input/output JSON + thinking
+                  (templates/english-with-progress-full.md or
+                  templates/japanese-with-progress-full.md)
 
 Note: the output is regenerated from JSONL on every run, but the file is
 only modified when its content would actually change. When the new
@@ -303,7 +300,6 @@ async function processProject(opts: CliOptions): Promise<void> {
 
   const sessions = await readAllSessions(files, config.includeSidechain);
   const formatOpts = {
-    includeTools: opts.includeTools,
     template: config.template,
   };
 

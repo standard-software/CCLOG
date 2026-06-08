@@ -15,8 +15,10 @@ export interface CclogConfig {
   recursive: boolean;
   includeSidechain: boolean;
   /**
-   * Loaded template content. Whether the progress section is rendered
-   * is determined by whether this string contains `%Progress%`.
+   * Loaded template content. Whether — and how verbosely — the progress
+   * section is rendered is determined by which placeholder this string
+   * contains: `%Progress%` (summary), `%ProgressFull%` (full dump), or
+   * neither (no progress).
    */
   template: string;
 }
