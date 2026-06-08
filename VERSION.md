@@ -2,6 +2,13 @@
 
 ## Version
 
+### 1.2.0-beta.1
+#### 2026/06/08(Mon)
+- add `--backup-jsonl` CLI flag: copies the discovered source `.jsonl` logs into `<out>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>/` before exporting, then proceeds with the normal Markdown export
+  - rationale: the source log location is derived from the (machine-specific) project path encoding, so swapping PCs changes which logs `cclog` sees; this flag preserves the raw session logs locally before that happens
+  - backup file names come from the session id, so a plain top-level session keeps its original `<uuid>.jsonl` name; collisions across multiple log dirs are disambiguated with a `__2`, `__3`, … suffix
+  - honors `--dry-run` (reports the would-be destination) and `--verbose` (logs each copied file)
+
 ### 1.2.0-beta.0
 #### 2026/06/08(Mon)
 - **breaking**: removed the `--include-tools` CLI flag. Progress verbosity is now driven entirely by the template, matching how the progress section's presence already worked:

@@ -32,6 +32,7 @@ function parseArgs(argv: string[]): ParseResult {
   let dryRun = false;
   let verbose = false;
   let initTemplate = false;
+  let backupJsonl = false;
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -47,6 +48,8 @@ function parseArgs(argv: string[]): ParseResult {
       verbose = true;
     } else if (a === '--init-template') {
       initTemplate = true;
+    } else if (a === '--backup-jsonl') {
+      backupJsonl = true;
     } else if (a === '--version' || a === '-v' || a === '-V') {
       return { kind: 'version' };
     } else if (a === '--help' || a === '-h') {
@@ -70,6 +73,7 @@ function parseArgs(argv: string[]): ParseResult {
       dryRun,
       verbose,
       initTemplate,
+      backupJsonl,
     },
   };
 }
@@ -92,6 +96,12 @@ Options:
                          location into <out>/templates/ and rewrite
                          cclog.config.json to point at the local copy. Lets you
                          edit the template without touching the global install.
+  --backup-jsonl         Copy the discovered source .jsonl logs into
+                         <out>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>/ before
+                         exporting. Lets you preserve the raw session logs
+                         locally (e.g. before swapping PCs, since the source
+                         path encoding — and thus the log location — changes
+                         per machine).
   --dry-run              Don't write files; report what would be written.
   --verbose              Verbose logging.
   -v, -V, --version      Show version and exit.
@@ -214,6 +224,42 @@ async function readAllSessions(
   return out;
 }
 
+function backupStampFolderName(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_`
+    + `${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
+}
+
+const BACKUP_DIR_NAME = 'backup_jsonl';
+
+// Copy every discovered source .jsonl into
+// <outDir>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>/ so the raw logs survive a
+// machine swap (where the source path encoding, and thus the log location,
+// changes). File names come from sessionIdFor so a plain top-level session
+// keeps its original "<uuid>.jsonl" name; collisions across multiple log
+// dirs are disambiguated with a numeric suffix.
+async function backupJsonlFiles(
+  files: DiscoveredFile[],
+  outDir: string,
+  verbose: boolean,
+): Promise<void> {
+  const destDir = path.join(outDir, BACKUP_DIR_NAME, backupStampFolderName(new Date()));
+  await fs.mkdir(destDir, { recursive: true });
+
+  const usedNames = new Set<string>();
+  let copied = 0;
+  for (const f of files) {
+    const base = sessionIdFor(f);
+    let name = `${base}.jsonl`;
+    for (let i = 2; usedNames.has(name); i++) name = `${base}__${i}.jsonl`;
+    usedNames.add(name);
+    await fs.copyFile(f.filePath, path.join(destDir, name));
+    copied++;
+    if (verbose) console.log(`  backup: ${f.filePath} -> ${name}`);
+  }
+  console.log(`Backed up ${copied} jsonl file(s) to ${destDir}`);
+}
+
 async function resolveRealPath(p: string): Promise<string> {
   try {
     return await fs.realpath(p);
@@ -296,6 +342,17 @@ async function processProject(opts: CliOptions): Promise<void> {
   if (!opts.dryRun) {
     await ensureDir(opts.outDir);
     await cleanupLegacyStateFiles(opts.outDir, opts.verbose);
+  }
+
+  if (opts.backupJsonl) {
+    if (opts.dryRun) {
+      console.log(
+        `(dry run) would back up ${files.length} jsonl file(s) to `
+        + `${path.join(opts.outDir, BACKUP_DIR_NAME, '<yyyy-mm-dd_hh-mm-ss>')}`,
+      );
+    } else {
+      await backupJsonlFiles(files, opts.outDir, opts.verbose);
+    }
   }
 
   const sessions = await readAllSessions(files, config.includeSidechain);

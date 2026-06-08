@@ -49,4 +49,5 @@ export interface CliOptions {
   dryRun: boolean;
   verbose: boolean;
   initTemplate: boolean;
+  backupJsonl: boolean;
 }

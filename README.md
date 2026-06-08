@@ -48,11 +48,37 @@ Options:
   --init-template        Copy the bundled template into <out>/templates/ and
                          rewrite cclog.config.json to use the local copy
                          (lets you edit it without touching the global install).
+  --backup-jsonl         Copy the discovered source .jsonl logs into
+                         <out>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>/ before
+                         exporting (preserves the raw logs locally — e.g.
+                         before swapping PCs, since the source log location
+                         is derived from the machine-specific project path).
   --dry-run              Don't write files; report what would be written.
   --verbose              Verbose logging.
   -v, -V, --version      Show version and exit.
   -h, --help             Show this help.
 ```
+
+### Backing up the raw JSONL logs
+
+The source logs Claude Code writes under `~/.claude/projects/` live in a
+folder whose name is derived from the project's absolute path. Move to a
+different machine (or a different path) and that folder name changes, so
+`cclog` no longer sees the old sessions. To keep a local copy of the raw
+logs before that happens:
+
+```bash
+cclog --backup-jsonl
+```
+
+This copies every discovered `.jsonl` into
+`CCLOG/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>/` (a new timestamped folder per
+run) and then exports as usual. Each backup keeps the session's original
+`<uuid>.jsonl` filename, so the files can be re-used later. Combine with
+`--dry-run` to preview the destination without copying, or `--verbose` to
+see each copied file. The `CCLOG/` output directory (and thus
+`backup_jsonl/`) is typically git-ignored, so backups won't pollute your
+repository.
 
 ## Configuration
 
