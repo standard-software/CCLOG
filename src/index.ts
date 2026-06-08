@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
 import { createRequire } from 'node:module';
 import { getLogDirForProject } from './lib/pathResolver.js';
 import { readJsonl } from './lib/jsonlReader.js';
@@ -97,11 +98,13 @@ Options:
                          cclog.config.json to point at the local copy. Lets you
                          edit the template without touching the global install.
   --backup-jsonl         Copy the discovered source .jsonl logs into
-                         <out>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>/ before
-                         exporting. Lets you preserve the raw session logs
-                         locally (e.g. before swapping PCs, since the source
-                         path encoding — and thus the log location — changes
-                         per machine).
+                         <out>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>_<hostname>/
+                         before exporting. Lets you preserve the raw session
+                         logs locally (e.g. before swapping PCs, since the
+                         source path encoding — and thus the log location —
+                         changes per machine). The folder name embeds the
+                         machine name (os.hostname()) so backups stay
+                         attributable per PC.
   --dry-run              Don't write files; report what would be written.
   --verbose              Verbose logging.
   -v, -V, --version      Show version and exit.
@@ -224,26 +227,46 @@ async function readAllSessions(
   return out;
 }
 
-function backupStampFolderName(d: Date): string {
+// Machine name (Windows COMPUTERNAME / Unix hostname), sanitized so it is
+// safe as a single path segment: anything outside [A-Za-z0-9._-] (e.g. the
+// dots of an FQDN are kept, but spaces/slashes are not) becomes "_". Falls
+// back to "unknown-host" if the hostname is empty/unavailable.
+function backupHostName(): string {
+  const raw = (() => {
+    try {
+      return os.hostname();
+    } catch {
+      return '';
+    }
+  })();
+  const safe = raw.replace(/[^A-Za-z0-9._-]/g, '_').replace(/^_+|_+$/g, '');
+  return safe || 'unknown-host';
+}
+
+// Folder name is "<yyyy-mm-dd_hh-mm-ss>_<hostname>" so backups sort
+// chronologically while still recording which machine they came from.
+function backupFolderName(d: Date): string {
   const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_`
+  const stamp = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_`
     + `${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
+  return `${stamp}_${backupHostName()}`;
 }
 
 const BACKUP_DIR_NAME = 'backup_jsonl';
 
 // Copy every discovered source .jsonl into
-// <outDir>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>/ so the raw logs survive a
-// machine swap (where the source path encoding, and thus the log location,
-// changes). File names come from sessionIdFor so a plain top-level session
-// keeps its original "<uuid>.jsonl" name; collisions across multiple log
-// dirs are disambiguated with a numeric suffix.
+// <outDir>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>_<hostname>/ so the raw logs
+// survive a machine swap (where the source path encoding, and thus the log
+// location, changes) and stay attributable to the machine they came from.
+// File names come from sessionIdFor so a plain top-level session keeps its
+// original "<uuid>.jsonl" name; collisions across multiple log dirs are
+// disambiguated with a numeric suffix.
 async function backupJsonlFiles(
   files: DiscoveredFile[],
   outDir: string,
   verbose: boolean,
 ): Promise<void> {
-  const destDir = path.join(outDir, BACKUP_DIR_NAME, backupStampFolderName(new Date()));
+  const destDir = path.join(outDir, BACKUP_DIR_NAME, backupFolderName(new Date()));
   await fs.mkdir(destDir, { recursive: true });
 
   const usedNames = new Set<string>();
@@ -348,7 +371,7 @@ async function processProject(opts: CliOptions): Promise<void> {
     if (opts.dryRun) {
       console.log(
         `(dry run) would back up ${files.length} jsonl file(s) to `
-        + `${path.join(opts.outDir, BACKUP_DIR_NAME, '<yyyy-mm-dd_hh-mm-ss>')}`,
+        + `${path.join(opts.outDir, BACKUP_DIR_NAME, backupFolderName(new Date()))}`,
       );
     } else {
       await backupJsonlFiles(files, opts.outDir, opts.verbose);
