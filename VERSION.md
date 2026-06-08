@@ -2,6 +2,11 @@
 
 ## Version
 
+### 1.2.2
+#### 2026/06/08(Mon)
+- `--backup-jsonl` is now a standalone action: it copies the raw source `.jsonl` logs and exits **without** regenerating `CCLOG_ALL.md` / per-session Markdown
+  - rationale: backing up and exporting are separate concerns; the flag is for preserving the raw logs (e.g. before a PC swap), so it no longer also rewrites the Markdown output
+
 ### 1.2.1
 #### 2026/06/08(Mon)
 - `--backup-jsonl` backup folders now embed the machine name: the folder is named `<yyyy-mm-dd_hh-mm-ss>_<hostname>` (via `os.hostname()`, sanitized to a safe path segment) instead of timestamp only, so backups stay attributable to the PC they came from when consolidating logs across machines
