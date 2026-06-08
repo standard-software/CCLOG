@@ -49,10 +49,13 @@ Options:
                          rewrite cclog.config.json to use the local copy
                          (lets you edit it without touching the global install).
   --backup-jsonl         Copy the discovered source .jsonl logs into
-                         <out>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>/ before
-                         exporting (preserves the raw logs locally — e.g.
-                         before swapping PCs, since the source log location
-                         is derived from the machine-specific project path).
+                         <out>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>_<hostname>/
+                         before exporting (preserves the raw logs locally —
+                         e.g. before swapping PCs, since the source log
+                         location is derived from the machine-specific
+                         project path). The folder name embeds the machine
+                         name (os.hostname()) so backups stay attributable
+                         per PC.
   --dry-run              Don't write files; report what would be written.
   --verbose              Verbose logging.
   -v, -V, --version      Show version and exit.
@@ -72,9 +75,11 @@ cclog --backup-jsonl
 ```
 
 This copies every discovered `.jsonl` into
-`CCLOG/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>/` (a new timestamped folder per
-run) and then exports as usual. Each backup keeps the session's original
-`<uuid>.jsonl` filename, so the files can be re-used later. Combine with
+`CCLOG/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>_<hostname>/` (a new timestamped
+folder per run, with the machine name from `os.hostname()` appended so
+backups stay attributable per PC) and then exports as usual. Each backup
+keeps the session's original `<uuid>.jsonl` filename, so the files can be
+re-used later. Combine with
 `--dry-run` to preview the destination without copying, or `--verbose` to
 see each copied file. The `CCLOG/` output directory (and thus
 `backup_jsonl/`) is typically git-ignored, so backups won't pollute your

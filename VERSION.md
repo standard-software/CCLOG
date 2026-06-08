@@ -2,6 +2,11 @@
 
 ## Version
 
+### 1.2.1
+#### 2026/06/08(Mon)
+- `--backup-jsonl` backup folders now embed the machine name: the folder is named `<yyyy-mm-dd_hh-mm-ss>_<hostname>` (via `os.hostname()`, sanitized to a safe path segment) instead of timestamp only, so backups stay attributable to the PC they came from when consolidating logs across machines
+  - falls back to `unknown-host` if the hostname is unavailable
+
 ### 1.2.0
 #### 2026/06/08(Mon)
 - **breaking**: removed the `--include-tools` CLI flag. Progress verbosity is now driven entirely by the template, matching how the progress section's presence already worked:
