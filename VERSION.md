@@ -2,6 +2,14 @@
 
 ## Version
 
+### 1.4.0
+#### 2026/07/02(Thu)
+- `backup_CCLOG_md/` no longer fires on every run — only when a rewrite is actually **destructive** (an existing pair identity has vanished from the new body). Streaming completion of the last pair and backdated middle-inserts both preserve every old identity, so they now rewrite without backing up.
+  - previous behavior: any non-append rewrite triggered a backup. In aggregate mode (`CCLOG_ALL.md`) where an active session's newest pair often lands mid-sequence (or where the last captured pair grows on the next run), this fired on nearly every run and accumulated indefinitely.
+  - identity per block = the `# %DateTime%` line + the `Session: %SessionId%` line. Stable across streaming completion; only differs when a pair genuinely disappears (PC swap that dropped some sessions, deleted jsonl, etc.).
+  - trade-off: swapping between the bundled templates (english ↔ japanese ↔ with-progress variants) no longer backs up either, since those two identity lines are identical across bundled templates. Custom templates that change the `# %DateTime%` or `Session:` line format still trigger backup.
+- backup folder retention: `backup_CCLOG_md/` is capped at 20 most recent folders; older ones are pruned automatically after each backup so the directory stays bounded.
+
 ### 1.3.0
 #### 2026/06/09(Tue)
 - automatically back up `CCLOG_ALL.md` / `CCLOG_<sessionId>.md` before a **full rewrite** overwrites it

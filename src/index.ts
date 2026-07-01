@@ -258,6 +258,34 @@ function backupFolderName(d: Date): string {
 
 const BACKUP_DIR_NAME = 'backup_jsonl';
 const MD_BACKUP_DIR_NAME = 'backup_CCLOG_md';
+const MD_BACKUP_KEEP = 20;
+
+// Delete oldest folders in <backupRoot> so at most MD_BACKUP_KEEP remain.
+// Folders are timestamp-prefixed so lexicographic sort matches chronological
+// order. Called after a successful destructive-rewrite backup — keeps disk
+// usage bounded without hiding recent history.
+async function pruneOldBackupFolders(backupRoot: string): Promise<void> {
+  let entries: string[];
+  try {
+    entries = await fs.readdir(backupRoot);
+  } catch {
+    return;
+  }
+  const folders: string[] = [];
+  for (const name of entries) {
+    try {
+      const st = await fs.stat(path.join(backupRoot, name));
+      if (st.isDirectory()) folders.push(name);
+    } catch {
+      // skip
+    }
+  }
+  folders.sort();
+  const toDelete = folders.slice(0, Math.max(0, folders.length - MD_BACKUP_KEEP));
+  for (const name of toDelete) {
+    await fs.rm(path.join(backupRoot, name), { recursive: true, force: true });
+  }
+}
 
 // Copy every discovered source .jsonl into
 // <outDir>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>_<hostname>/ so the raw logs
@@ -402,7 +430,7 @@ async function processProject(opts: CliOptions): Promise<void> {
 
   if (opts.perSession) {
     let totalPairs = 0;
-    let rewriteCount = 0;
+    let backedUpCount = 0;
     for (const s of sessions) {
       const filePath = path.join(opts.outDir, `CCLOG_${s.sessionId}.md`);
       const skipNote = s.skippedLines ? ` [${s.skippedLines} unparseable lines]` : '';
@@ -419,14 +447,16 @@ async function processProject(opts: CliOptions): Promise<void> {
 
       let result: WriteResult | 'dry-run' = 'dry-run';
       if (!opts.dryRun) {
-        result = await smartWrite(filePath, content, mdBackupDir);
+        const outcome = await smartWrite(filePath, content, mdBackupDir);
+        result = outcome.result;
+        if (outcome.backedUp) backedUpCount++;
       }
-      if (result === 'rewrite') rewriteCount++;
       console.log(`[${s.sessionId.slice(0, 8)}] ${s.allPairs.length} pair(s) [${result}]${skipNote}`);
       totalPairs += s.allPairs.length;
     }
-    if (rewriteCount > 0 && mdBackupDir) {
-      console.log(`Backed up ${rewriteCount} pre-overwrite md file(s) to ${mdBackupDir}`);
+    if (backedUpCount > 0 && mdBackupDir) {
+      console.log(`Backed up ${backedUpCount} pre-overwrite md file(s) to ${mdBackupDir}`);
+      await pruneOldBackupFolders(path.join(opts.outDir, MD_BACKUP_DIR_NAME));
     }
     console.log(`Done. ${totalPairs} pair(s) total${opts.dryRun ? ' (dry run)' : ''}.`);
     return;
@@ -455,16 +485,20 @@ async function processProject(opts: CliOptions): Promise<void> {
 
   const filePath = path.join(opts.outDir, ALL_IN_ONE_FILE);
   let result: WriteResult | 'dry-run' = 'dry-run';
+  let backedUp = false;
   if (!opts.dryRun) {
-    result = await smartWrite(filePath, content, mdBackupDir);
+    const outcome = await smartWrite(filePath, content, mdBackupDir);
+    result = outcome.result;
+    backedUp = outcome.backedUp;
   }
 
   for (const s of sessions) {
     const skipNote = s.skippedLines ? ` [${s.skippedLines} unparseable lines]` : '';
     console.log(`[${s.sessionId.slice(0, 8)}] ${s.allPairs.length} pair(s)${skipNote}`);
   }
-  if (result === 'rewrite' && mdBackupDir) {
+  if (backedUp && mdBackupDir) {
     console.log(`Backed up 1 pre-overwrite md file to ${mdBackupDir}`);
+    await pruneOldBackupFolders(path.join(opts.outDir, MD_BACKUP_DIR_NAME));
   }
   console.log(`Done. ${items.length} pair(s) total [${result}]${opts.dryRun ? ' (dry run)' : ''}.`);
 }

@@ -188,6 +188,11 @@ export function buildAllInOneFileHeader(projectPath: string): string {
 
 export type WriteResult = 'create' | 'noop' | 'append' | 'rewrite';
 
+export interface SmartWriteOutcome {
+  result: WriteResult;
+  backedUp: boolean;
+}
+
 function splitHeaderBody(s: string): { header: string; body: string } | null {
   // The body starts after the first "\n----...----\n" line. Anything before
   // (the notice, the title, the project metadata) is the header.
@@ -205,6 +210,39 @@ async function backupBeforeOverwrite(filePath: string, backupDir: string): Promi
   await fs.copyFile(filePath, path.join(backupDir, path.basename(filePath)));
 }
 
+// Extract a stable per-block identity — lines that don't drift as the
+// answer text is streamed to completion. All bundled templates put the
+// question timestamp on a line starting with '# ' and the session id on a
+// line starting with 'Session:'. Together these uniquely identify a Q&A
+// pair. Falls back to the block's first 100 chars for unknown templates.
+function extractBlockIdentity(block: string): string {
+  const lines = block.split('\n');
+  let dt = '';
+  let sid = '';
+  for (const line of lines) {
+    if (!dt && line.startsWith('# ')) dt = line;
+    else if (!sid && line.startsWith('Session:')) sid = line;
+    if (dt && sid) break;
+  }
+  if (dt || sid) return `${dt}${sid}`;
+  return block.slice(0, 100);
+}
+
+// A "rewrite" is destructive only when the new body has dropped at least
+// one identity present in the old body. Streaming completion of the last
+// pair or a backdated middle-insert both keep every old pair identity —
+// no data is lost, so the backup can be skipped.
+function isDestructiveRewrite(oldBody: string, newBody: string): boolean {
+  const sep = '\n' + SEP + '\n';
+  const oldBlocks = oldBody.split(sep).filter(b => b.length > 0);
+  const newBlocks = newBody.split(sep).filter(b => b.length > 0);
+  const newIds = new Set(newBlocks.map(extractBlockIdentity));
+  for (const b of oldBlocks) {
+    if (!newIds.has(extractBlockIdentity(b))) return true;
+  }
+  return false;
+}
+
 /**
  * Write file content with minimal disturbance:
  *   - no existing file        -> create
@@ -217,16 +255,18 @@ async function backupBeforeOverwrite(filePath: string, backupDir: string): Promi
  * force rewrites.
  *
  * When `backupDir` is given, the existing file is copied there (under its
- * original name) immediately before a full rewrite overwrites it — so a
- * large non-append change (different PC environment, template change, etc.)
- * never silently discards the previous Markdown. create/noop/append do not
- * back up: they either touch nothing or only append.
+ * original name) immediately before a *destructive* rewrite overwrites it
+ * — meaning the new body has dropped at least one pair identity that the
+ * old body had. Non-destructive rewrites (streaming completion of the last
+ * pair, or a backdated middle-insert that just reorders/extends without
+ * dropping anything) do not back up, because no prior content is being
+ * lost. create/noop/append do not back up either.
  */
 export async function smartWrite(
   filePath: string,
   newContent: string,
   backupDir?: string,
-): Promise<WriteResult> {
+): Promise<SmartWriteOutcome> {
   let existing: string;
   try {
     existing = await fs.readFile(filePath, 'utf-8');
@@ -234,7 +274,7 @@ export async function smartWrite(
     const err = e as NodeJS.ErrnoException;
     if (err.code === 'ENOENT') {
       await fs.writeFile(filePath, newContent, 'utf-8');
-      return 'create';
+      return { result: 'create', backedUp: false };
     }
     throw e;
   }
@@ -242,20 +282,25 @@ export async function smartWrite(
   const eParts = splitHeaderBody(existing);
   const nParts = splitHeaderBody(newContent);
   if (!eParts || !nParts) {
-    if (backupDir) await backupBeforeOverwrite(filePath, backupDir);
+    let backedUp = false;
+    if (backupDir) { await backupBeforeOverwrite(filePath, backupDir); backedUp = true; }
     await fs.writeFile(filePath, newContent, 'utf-8');
-    return 'rewrite';
+    return { result: 'rewrite', backedUp };
   }
 
   if (eParts.body === nParts.body) {
-    return 'noop';
+    return { result: 'noop', backedUp: false };
   }
   if (nParts.body.startsWith(eParts.body)) {
     const tail = nParts.body.slice(eParts.body.length);
     await fs.appendFile(filePath, tail, 'utf-8');
-    return 'append';
+    return { result: 'append', backedUp: false };
   }
-  if (backupDir) await backupBeforeOverwrite(filePath, backupDir);
+  let backedUp = false;
+  if (backupDir && isDestructiveRewrite(eParts.body, nParts.body)) {
+    await backupBeforeOverwrite(filePath, backupDir);
+    backedUp = true;
+  }
   await fs.writeFile(filePath, newContent, 'utf-8');
-  return 'rewrite';
+  return { result: 'rewrite', backedUp };
 }
