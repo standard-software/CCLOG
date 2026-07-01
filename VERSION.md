@@ -9,6 +9,9 @@
   - identity per block = the `# %DateTime%` line + the `Session: %SessionId%` line. Stable across streaming completion; only differs when a pair genuinely disappears (PC swap that dropped some sessions, deleted jsonl, etc.).
   - trade-off: swapping between the bundled templates (english ↔ japanese ↔ with-progress variants) no longer backs up either, since those two identity lines are identical across bundled templates. Custom templates that change the `# %DateTime%` or `Session:` line format still trigger backup.
 - backup folder retention: `backup_CCLOG_md/` is capped at 20 most recent folders; older ones are pruned automatically after each backup so the directory stays bounded.
+- fix: `%Question%` and `%Progress%` / `%ProgressFull%` now get the same HTML-comment token defanging that `%Answer%` already had. If a custom template wraps `%Question%` (or `%Progress%`) inside an HTML comment for fold-in-preview, a question that literally contains `-->` (e.g. paste of HTML-comment discussion) no longer closes the comment early and breaks the block.
+  - both tokens are defanged: `-->` → `-- >` and `<!--` → `<! --`. The `<!--` side isn't strictly required for correctness (HTML comments don't nest so a nested `<!--` is inert), but defanging it too gives a consistent visual cue that the pair went through sanitization — otherwise a run with raw `<!--` and defanged `-- >` mixed together looks suspicious to a reader.
+- destructive-rewrite detector: only blocks whose first line matches the `# YYYY/MM/DD ` timestamp header pattern count as pair identities. Phantom blocks (created when a Q/A body embeds the 40-hyphen SEP line and the splitter over-splits there) are now ignored on both sides — otherwise unrelated content changes (e.g. the new `<!--` / `-->` defanging) would shift the phantom block's body-derived "identity" and spuriously fire the backup.
 
 ### 1.3.0
 #### 2026/06/09(Tue)

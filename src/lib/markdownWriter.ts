@@ -57,6 +57,14 @@ export function formatPair(pair: Pair, opts: FormatOptions, sessionId?: string):
     if (t) qParts.push(t);
   }
   const questionText = qParts.filter(Boolean).join('\n\n');
+  // Defang HTML-comment tokens so a template wrapping %Question% inside
+  // `<!-- ... -->` (some users do this so both sides fold in previews)
+  // isn't broken by a literal `-->` in the question. `<!--` isn't strictly
+  // dangerous (HTML comments don't nest so a nested `<!--` is inert), but
+  // we defang it too so readers of the output can visually tell "this was
+  // sanitized" — otherwise mixed raw `<!--` and defanged `-- >` look
+  // suspicious. See VERSION.md 1.4.0.
+  const safeQuestion = questionText.replaceAll('-->', '-- >').replaceAll('<!--', '<! --');
 
   const progressLines: string[] = [];
   if (wantProgress) {
@@ -94,16 +102,19 @@ export function formatPair(pair: Pair, opts: FormatOptions, sessionId?: string):
       }
     }
   }
-  const safeAnswer = answerText.replaceAll('-->', '-- >');
+  const safeAnswer = answerText.replaceAll('-->', '-- >').replaceAll('<!--', '<! --');
 
   // The template contains at most one of %Progress% / %ProgressFull%;
   // providing both vars (same rendered text) means whichever is present
   // gets filled and the other key is simply a no-op.
-  const progressText = progressLines.join('\n');
+  // Progress rendering includes tool_use / tool_result / assistant text
+  // that can contain a literal `-->` — same defanging as Question/Answer
+  // so a template wrapping %Progress% in a comment stays intact.
+  const progressText = progressLines.join('\n').replaceAll('-->', '-- >').replaceAll('<!--', '<! --');
   return renderTemplate(tpl, {
     DateTime: ts,
     SessionId: sessionId ?? '',
-    Question: questionText,
+    Question: safeQuestion,
     Progress: progressText,
     ProgressFull: progressText,
     Answer: safeAnswer,
@@ -210,35 +221,53 @@ async function backupBeforeOverwrite(filePath: string, backupDir: string): Promi
   await fs.copyFile(filePath, path.join(backupDir, path.basename(filePath)));
 }
 
+// Timestamp header rendered from %DateTime% by every bundled template:
+// `# YYYY/MM/DD `. Anchors extractBlockIdentity so a real pair block is
+// distinguished from a phantom block created when a Q/A body happens to
+// contain the 40-hyphen SEP line and our splitter over-splits there.
+const TS_HEADER_PATTERN = /^# \d{4}\/\d{2}\/\d{2} /;
+
 // Extract a stable per-block identity — lines that don't drift as the
 // answer text is streamed to completion. All bundled templates put the
-// question timestamp on a line starting with '# ' and the session id on a
-// line starting with 'Session:'. Together these uniquely identify a Q&A
-// pair. Falls back to the block's first 100 chars for unknown templates.
-function extractBlockIdentity(block: string): string {
+// question timestamp on a line matching TS_HEADER_PATTERN and the session
+// id on a line starting with 'Session:'. Together these uniquely identify
+// a Q&A pair. Returns null when the block has no timestamp header — a
+// phantom created by a body-embedded SEP line — so isDestructiveRewrite
+// can skip it instead of turning body content into a spurious identity.
+
+function extractBlockIdentity(block: string): string | null {
   const lines = block.split('\n');
   let dt = '';
   let sid = '';
   for (const line of lines) {
-    if (!dt && line.startsWith('# ')) dt = line;
+    if (!dt && TS_HEADER_PATTERN.test(line)) dt = line;
     else if (!sid && line.startsWith('Session:')) sid = line;
     if (dt && sid) break;
   }
-  if (dt || sid) return `${dt}${sid}`;
-  return block.slice(0, 100);
+  if (!dt) return null;
+  return `${dt}${sid}`;
 }
 
 // A "rewrite" is destructive only when the new body has dropped at least
 // one identity present in the old body. Streaming completion of the last
 // pair or a backdated middle-insert both keep every old pair identity —
-// no data is lost, so the backup can be skipped.
+// no data is lost, so the backup can be skipped. Phantom blocks (identity
+// === null) are dropped on both sides so a Q/A body embedding a 40-hyphen
+// line doesn't turn subsequent unrelated body-content edits (e.g. this
+// version's `<!--` → `<! --` defanging) into false destructive detections.
 function isDestructiveRewrite(oldBody: string, newBody: string): boolean {
   const sep = '\n' + SEP + '\n';
   const oldBlocks = oldBody.split(sep).filter(b => b.length > 0);
   const newBlocks = newBody.split(sep).filter(b => b.length > 0);
-  const newIds = new Set(newBlocks.map(extractBlockIdentity));
+  const newIds = new Set<string>();
+  for (const b of newBlocks) {
+    const id = extractBlockIdentity(b);
+    if (id !== null) newIds.add(id);
+  }
   for (const b of oldBlocks) {
-    if (!newIds.has(extractBlockIdentity(b))) return true;
+    const id = extractBlockIdentity(b);
+    if (id === null) continue;
+    if (!newIds.has(id)) return true;
   }
   return false;
 }
