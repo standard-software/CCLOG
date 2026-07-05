@@ -101,6 +101,8 @@ to customize behavior:
   "extraLogDirs": [],
   "recursive": false,
   "includeSidechain": false,
+  "outputAllFileName": "CCLOG_ALL.md",
+  "outputSessionFilePrefix": "CCLOG_",
   "template": "templates/japanese.md"
 }
 ```
@@ -108,13 +110,15 @@ to customize behavior:
 Use backslash-escaped paths on Windows (`C:\\Users\\...`) and forward-slash
 paths on Ubuntu/macOS (`/home/you/...`).
 
-| Field              | Description                                                                 |
-|--------------------|-----------------------------------------------------------------------------|
-| `extraCwds`        | Additional project directories whose logs should be merged into the output. |
-| `extraLogDirs`     | Additional raw `~/.claude/projects/...` directories to read verbatim.       |
-| `recursive`        | If `true`, descend into subdirectories of each log dir (e.g. subagent logs).|
-| `includeSidechain` | If `true`, include subagent / sidechain pairs in the output.                |
-| `template`         | Path to a Markdown template. Resolved against cclog's own `templates/` dir first, then your CCLOG dir. |
+| Field                     | Description                                                                 |
+|---------------------------|-----------------------------------------------------------------------------|
+| `extraCwds`               | Additional project directories whose logs should be merged into the output. |
+| `extraLogDirs`            | Additional raw `~/.claude/projects/...` directories to read verbatim.       |
+| `recursive`               | If `true`, descend into subdirectories of each log dir (e.g. subagent logs).|
+| `includeSidechain`        | If `true`, include subagent / sidechain pairs in the output.                |
+| `outputAllFileName`       | Filename for the aggregated output. Default `CCLOG_ALL.md`. The title inside the file is derived from the basename (e.g. setting `cclog.md` also changes the header to `# cclog`). |
+| `outputSessionFilePrefix` | Prefix for per-session filenames (used with `--per-session`). Default `CCLOG_`, so files are `CCLOG_<sessionId>.md`. Empty string means no prefix. |
+| `template`                | Path to a Markdown template. Resolved against cclog's own `templates/` dir first, then your CCLOG dir. |
 
 ### Templates
 

@@ -15,6 +15,17 @@ export interface CclogConfig {
   recursive: boolean;
   includeSidechain: boolean;
   /**
+   * Filename for the aggregated Markdown output (default `CCLOG_ALL.md`).
+   * The header title inside the file is derived from this basename.
+   */
+  outputAllFileName: string;
+  /**
+   * Prefix for per-session Markdown files (default `CCLOG_`). The
+   * per-session filename is `<prefix><sessionId>.md`. Empty string means
+   * no prefix.
+   */
+  outputSessionFilePrefix: string;
+  /**
    * Loaded template content. Whether — and how verbosely — the progress
    * section is rendered is determined by which placeholder this string
    * contains: `%Progress%` (summary), `%ProgressFull%` (full dump), or
@@ -28,6 +39,8 @@ export const DEFAULT_CONFIG: CclogConfig = {
   extraLogDirs: [],
   recursive: false,
   includeSidechain: false,
+  outputAllFileName: 'CCLOG_ALL.md',
+  outputSessionFilePrefix: 'CCLOG_',
   template: DEFAULT_TEMPLATE,
 };
 
@@ -40,6 +53,10 @@ function asStringArray(v: unknown): string[] {
 
 function asBool(v: unknown, fallback: boolean): boolean {
   return typeof v === 'boolean' ? v : fallback;
+}
+
+function asNonEmptyString(v: unknown, fallback: string): string {
+  return typeof v === 'string' && v.trim() !== '' ? v : fallback;
 }
 
 /**
@@ -80,6 +97,10 @@ export async function loadConfig(outDir: string): Promise<{
     extraLogDirs: asStringArray(obj.extraLogDirs),
     recursive: asBool(obj.recursive, DEFAULT_CONFIG.recursive),
     includeSidechain: asBool(obj.includeSidechain, DEFAULT_CONFIG.includeSidechain),
+    outputAllFileName: asNonEmptyString(obj.outputAllFileName, DEFAULT_CONFIG.outputAllFileName),
+    outputSessionFilePrefix: typeof obj.outputSessionFilePrefix === 'string'
+      ? obj.outputSessionFilePrefix
+      : DEFAULT_CONFIG.outputSessionFilePrefix,
     template,
   };
   return { config, source: 'file', path: fpath };

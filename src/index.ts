@@ -12,7 +12,6 @@ import {
   buildSessionFileHeader,
   buildAllInOneFileHeader,
   smartWrite,
-  ALL_IN_ONE_FILE,
   type WriteResult,
 } from './lib/markdownWriter.js';
 import type { CliOptions, Pair } from './lib/types.js';
@@ -90,8 +89,11 @@ Arguments:
 
 Options:
   --out <dir>            Output directory (default: <project-path>/CCLOG).
-  --per-session          Write one file per session (CCLOG/CCLOG_<sessionId>.md)
-                         instead of the aggregated CCLOG/CCLOG_ALL.md.
+  --per-session          Write one file per session (CCLOG/CCLOG_<sessionId>.md
+                         by default; the prefix and aggregate filename can be
+                         customized via cclog.config.json — see
+                         outputSessionFilePrefix / outputAllFileName) instead of
+                         the aggregated CCLOG/CCLOG_ALL.md.
   --init-template        Copy the currently-configured template (or the English
                          default if no config exists) from cclog's install
                          location into <out>/templates/ and rewrite
@@ -363,10 +365,12 @@ async function processProject(opts: CliOptions): Promise<void> {
     }
     if (configSource === 'file') {
       console.log(`Config:  ${configPath}`);
-      if (config.extraCwds.length) console.log(`  extraCwds:        ${config.extraCwds.length}`);
-      if (config.extraLogDirs.length) console.log(`  extraLogDirs:     ${config.extraLogDirs.length}`);
-      console.log(`  recursive:        ${config.recursive}`);
-      console.log(`  includeSidechain: ${config.includeSidechain}`);
+      if (config.extraCwds.length) console.log(`  extraCwds:               ${config.extraCwds.length}`);
+      if (config.extraLogDirs.length) console.log(`  extraLogDirs:            ${config.extraLogDirs.length}`);
+      console.log(`  recursive:               ${config.recursive}`);
+      console.log(`  includeSidechain:        ${config.includeSidechain}`);
+      console.log(`  outputAllFileName:       ${config.outputAllFileName}`);
+      console.log(`  outputSessionFilePrefix: ${config.outputSessionFilePrefix}`);
     }
     if (logDirs.length === 1 && candidateLogDirs.length === 1) {
       console.log(`Log dir: ${logDirs[0]}`);
@@ -381,7 +385,7 @@ async function processProject(opts: CliOptions): Promise<void> {
       }
     }
     console.log(`Out dir: ${opts.outDir}`);
-    console.log(`Mode:    ${opts.perSession ? 'per-session' : 'aggregate (CCLOG_ALL.md)'}`);
+    console.log(`Mode:    ${opts.perSession ? 'per-session' : `aggregate (${config.outputAllFileName})`}`);
     console.log(`Sessions: ${files.length}`);
   }
 
@@ -432,7 +436,7 @@ async function processProject(opts: CliOptions): Promise<void> {
     let totalPairs = 0;
     let backedUpCount = 0;
     for (const s of sessions) {
-      const filePath = path.join(opts.outDir, `CCLOG_${s.sessionId}.md`);
+      const filePath = path.join(opts.outDir, `${config.outputSessionFilePrefix}${s.sessionId}.md`);
       const skipNote = s.skippedLines ? ` [${s.skippedLines} unparseable lines]` : '';
 
       if (s.allPairs.length === 0) {
@@ -480,10 +484,10 @@ async function processProject(opts: CliOptions): Promise<void> {
   });
 
   const content =
-    buildAllInOneFileHeader(opts.projectPath) +
+    buildAllInOneFileHeader(opts.projectPath, config.outputAllFileName) +
     items.map(it => formatPair(it.pair, formatOpts, it.sessionId)).join('');
 
-  const filePath = path.join(opts.outDir, ALL_IN_ONE_FILE);
+  const filePath = path.join(opts.outDir, config.outputAllFileName);
   let result: WriteResult | 'dry-run' = 'dry-run';
   let backedUp = false;
   if (!opts.dryRun) {

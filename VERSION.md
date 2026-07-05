@@ -2,6 +2,14 @@
 
 ## Version
 
+### 1.5.0-beta.1
+#### 2026/07/06(Mon)
+- add `outputAllFileName` and `outputSessionFilePrefix` config options in `cclog.config.json`
+  - `outputAllFileName` (default `"CCLOG_ALL.md"`): filename for the aggregated Markdown output
+  - `outputSessionFilePrefix` (default `"CCLOG_"`): prefix for per-session Markdown files (`--per-session`); the file name becomes `<prefix><sessionId>.md`. Empty string is allowed (no prefix)
+  - the title inside the aggregated file (`# CCLOG_ALL`) is now derived from `outputAllFileName` (basename without `.md`); the default filename keeps the existing `# CCLOG_ALL` title unchanged
+  - existing installs continue to write `CCLOG_ALL.md` / `CCLOG_<sessionId>.md` with no config changes
+
 ### 1.4.0
 #### 2026/07/02(Thu)
 - `backup_CCLOG_md/` no longer fires on every run — only when a rewrite is actually **destructive** (an existing pair identity has vanished from the new body). Streaming completion of the last pair and backdated middle-inserts both preserve every old identity, so they now rewrite without backing up.

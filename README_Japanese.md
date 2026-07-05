@@ -100,6 +100,8 @@ cclog --backup-jsonl
   "extraLogDirs": [],
   "recursive": false,
   "includeSidechain": false,
+  "outputAllFileName": "CCLOG_ALL.md",
+  "outputSessionFilePrefix": "CCLOG_",
   "template": "templates/japanese.md"
 }
 ```
@@ -107,13 +109,15 @@ cclog --backup-jsonl
 Windows ではバックスラッシュをエスケープしたパス (`C:\\Users\\...`)、
 Ubuntu / macOS ではスラッシュ区切りのパス (`/home/you/...`) を使ってください。
 
-| フィールド          | 説明                                                                       |
-|---------------------|----------------------------------------------------------------------------|
-| `extraCwds`         | このログにマージしたい、追加のプロジェクトディレクトリ。                     |
-| `extraLogDirs`      | `~/.claude/projects/...` を直接指定する形式の追加ログディレクトリ。          |
-| `recursive`         | `true` にすると各ログディレクトリのサブフォルダ (サブエージェント等) も走査。 |
-| `includeSidechain`  | `true` にするとサブエージェント / サイドチェーンのペアも出力に含めます。      |
-| `template`          | Markdown テンプレートのパス。cclog 同梱の `templates/` を先に探索し、なければ CCLOG ディレクトリを探します。 |
+| フィールド                 | 説明                                                                       |
+|----------------------------|----------------------------------------------------------------------------|
+| `extraCwds`                | このログにマージしたい、追加のプロジェクトディレクトリ。                     |
+| `extraLogDirs`             | `~/.claude/projects/...` を直接指定する形式の追加ログディレクトリ。          |
+| `recursive`                | `true` にすると各ログディレクトリのサブフォルダ (サブエージェント等) も走査。 |
+| `includeSidechain`         | `true` にするとサブエージェント / サイドチェーンのペアも出力に含めます。      |
+| `outputAllFileName`        | 集約出力ファイル名。デフォルト `CCLOG_ALL.md`。ファイル内の見出しはこのファイル名 (拡張子除く) から生成されます (例: `cclog.md` にすると見出しも `# cclog` になります)。 |
+| `outputSessionFilePrefix`  | `--per-session` で書き出す 1 セッション 1 ファイル形式のファイル名接頭辞。デフォルト `CCLOG_` (= `CCLOG_<sessionId>.md`)。空文字列にすれば接頭辞なし。 |
+| `template`                 | Markdown テンプレートのパス。cclog 同梱の `templates/` を先に探索し、なければ CCLOG ディレクトリを探します。 |
 
 ### テンプレート
 
