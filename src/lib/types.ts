@@ -50,4 +50,5 @@ export interface CliOptions {
   verbose: boolean;
   initTemplate: boolean;
   backupJsonl: boolean;
+  backupMd: boolean;
 }

@@ -56,6 +56,13 @@ Options:
                          from the machine-specific project path). The folder
                          name embeds the machine name (os.hostname()) so
                          backups stay attributable per PC.
+  --backup-md            Back up only: copy the already-exported Markdown (the
+                         aggregated file and any per-session files in <out>)
+                         into <out>/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<host>/
+                         and exit WITHOUT regenerating anything. On-demand
+                         trigger of the same backup cclog makes automatically
+                         before a destructive rewrite (e.g. to snapshot the
+                         current output before editing the config or template).
   --dry-run              Don't write files; report what would be written.
   --verbose              Verbose logging.
   -v, -V, --version      Show version and exit.

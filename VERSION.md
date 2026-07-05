@@ -2,6 +2,12 @@
 
 ## Version
 
+### 1.5.0-beta.2
+#### 2026/07/06(Mon)
+- add `--backup-md` CLI flag: a standalone action (mirroring `--backup-jsonl`) that copies the already-exported Markdown (the aggregated file plus any per-session files in `<out>`) into `<out>/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<hostname>/` and exits without regenerating anything
+  - same folder cclog auto-populates before a destructive rewrite, but triggered on demand — e.g. to snapshot the current output before editing the config or switching template
+  - honors `--dry-run` (reports the destination) and `--verbose` (logs each copied file); old folders are pruned to the most recent 20 (shared with the automatic backups)
+
 ### 1.5.0-beta.1
 #### 2026/07/06(Mon)
 - add `outputAllFileName` and `outputSessionFilePrefix` config options in `cclog.config.json`

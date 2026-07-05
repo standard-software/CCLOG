@@ -33,6 +33,7 @@ function parseArgs(argv: string[]): ParseResult {
   let verbose = false;
   let initTemplate = false;
   let backupJsonl = false;
+  let backupMd = false;
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -50,6 +51,8 @@ function parseArgs(argv: string[]): ParseResult {
       initTemplate = true;
     } else if (a === '--backup-jsonl') {
       backupJsonl = true;
+    } else if (a === '--backup-md') {
+      backupMd = true;
     } else if (a === '--version' || a === '-v' || a === '-V') {
       return { kind: 'version' };
     } else if (a === '--help' || a === '-h') {
@@ -74,6 +77,7 @@ function parseArgs(argv: string[]): ParseResult {
       verbose,
       initTemplate,
       backupJsonl,
+      backupMd,
     },
   };
 }
@@ -107,6 +111,15 @@ Options:
                          encoding — and thus the log location — changes per
                          machine). The folder name embeds the machine name
                          (os.hostname()) so backups stay attributable per PC.
+  --backup-md            Back up only: copy the existing exported Markdown
+                         (the aggregated file and any per-session files already
+                         in <out>) into <out>/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-
+                         ss>_<hostname>/ and exit WITHOUT regenerating anything.
+                         This is the same folder cclog auto-populates before a
+                         destructive rewrite, but triggered on demand — e.g. to
+                         snapshot the current CCLOG_ALL.md before editing the
+                         config or template. Old folders are pruned to the most
+                         recent 20 (shared with the automatic backups).
   --dry-run              Don't write files; report what would be written.
   --verbose              Verbose logging.
   -v, -V, --version      Show version and exit.
@@ -318,6 +331,64 @@ async function backupJsonlFiles(
   console.log(`Backed up ${copied} jsonl file(s) to ${destDir}`);
 }
 
+// Which already-exported Markdown files in outDir should --backup-md copy:
+// the aggregated file (config.outputAllFileName) plus every per-session file
+// (<outputSessionFilePrefix><id>.md). The aggregate name often also matches
+// the session prefix (default CCLOG_ALL.md starts with CCLOG_), so results are
+// de-duplicated. Only top-level .md files are considered — the backup_* and
+// templates/ subdirectories are never descended into.
+async function listExportedMdFiles(
+  outDir: string,
+  outputAllFileName: string,
+  outputSessionFilePrefix: string,
+): Promise<string[]> {
+  let entries: string[];
+  try {
+    entries = await fs.readdir(outDir);
+  } catch (e: unknown) {
+    const err = e as NodeJS.ErrnoException;
+    if (err.code === 'ENOENT') return [];
+    throw e;
+  }
+  const picked = new Set<string>();
+  for (const name of entries) {
+    if (!name.endsWith('.md')) continue;
+    const isAggregate = name === outputAllFileName;
+    const isPerSession = outputSessionFilePrefix !== '' && name.startsWith(outputSessionFilePrefix);
+    if (!isAggregate && !isPerSession) continue;
+    const full = path.join(outDir, name);
+    try {
+      const st = await fs.stat(full);
+      if (st.isFile()) picked.add(full);
+    } catch {
+      // skip
+    }
+  }
+  return Array.from(picked).sort();
+}
+
+// Copy the existing exported Markdown into
+// <outDir>/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<hostname>/ on demand, then
+// prune to the most recent MD_BACKUP_KEEP folders (shared with the automatic
+// pre-overwrite backups). Standalone action for --backup-md; does not read
+// jsonl or regenerate any Markdown.
+async function backupMdFiles(
+  mdFiles: string[],
+  outDir: string,
+  verbose: boolean,
+): Promise<void> {
+  const destDir = path.join(outDir, MD_BACKUP_DIR_NAME, backupFolderName(new Date()));
+  await fs.mkdir(destDir, { recursive: true });
+  let copied = 0;
+  for (const f of mdFiles) {
+    await fs.copyFile(f, path.join(destDir, path.basename(f)));
+    copied++;
+    if (verbose) console.log(`  backup: ${f} -> ${path.basename(f)}`);
+  }
+  console.log(`Backed up ${copied} md file(s) to ${destDir}`);
+  await pruneOldBackupFolders(path.join(outDir, MD_BACKUP_DIR_NAME));
+}
+
 async function resolveRealPath(p: string): Promise<string> {
   try {
     return await fs.realpath(p);
@@ -329,6 +400,31 @@ async function resolveRealPath(p: string): Promise<string> {
 async function processProject(opts: CliOptions): Promise<void> {
   // Load config from the output dir (CCLOG/cclog.config.json).
   const { config, source: configSource, path: configPath } = await loadConfig(opts.outDir);
+
+  // --backup-md is a standalone action: copy the already-exported Markdown
+  // and exit. It reads no jsonl and regenerates nothing, so it runs before
+  // the (potentially slow) log discovery below.
+  if (opts.backupMd) {
+    const mdFiles = await listExportedMdFiles(
+      opts.outDir,
+      config.outputAllFileName,
+      config.outputSessionFilePrefix,
+    );
+    if (mdFiles.length === 0) {
+      console.error(`No exported Markdown found to back up in: ${opts.outDir}`);
+      return;
+    }
+    if (opts.dryRun) {
+      console.log(
+        `(dry run) would back up ${mdFiles.length} md file(s) to `
+        + `${path.join(opts.outDir, MD_BACKUP_DIR_NAME, backupFolderName(new Date()))}`,
+      );
+      for (const f of mdFiles) console.log(`  - ${path.basename(f)}`);
+    } else {
+      await backupMdFiles(mdFiles, opts.outDir, opts.verbose);
+    }
+    return;
+  }
 
   // Candidate log dirs:
   //   1. raw cwd encoding
