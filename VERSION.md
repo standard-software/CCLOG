@@ -2,6 +2,13 @@
 
 ## Version
 
+### 1.5.0-beta.3
+#### 2026/07/06(Mon)
+- add `%SessionName%` template placeholder: the human-readable session name Claude Code shows in its resume list
+  - resolved from the log's `custom-title` (user-set) entry if present, otherwise the `ai-title` (auto-generated) entry, otherwise empty for sessions that predate the title feature
+  - the last title entry wins (titles are re-emitted as they are refined); a user-set custom title always takes precedence over the AI one
+  - opt-in: add `%SessionName%` to your template. The bundled templates and the built-in default are unchanged, so existing output is unaffected
+
 ### 1.5.0-beta.2
 #### 2026/07/06(Mon)
 - add `--backup-md` CLI flag: a standalone action (mirroring `--backup-jsonl`) that copies the already-exported Markdown (the aggregated file plus any per-session files in `<out>`) into `<out>/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<hostname>/` and exits without regenerating anything

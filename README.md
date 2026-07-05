@@ -144,6 +144,7 @@ A template can use the following placeholders:
 |-------------------|----------------------------------------------------------|
 | `%DateTime%`      | Question timestamp (`YYYY/MM/DD Day HH:MM:SS`)            |
 | `%SessionId%`     | The session UUID                                          |
+| `%SessionName%`   | Human-readable session name — the custom title if set, else Claude Code's auto-generated title, else empty |
 | `%Question%`      | The user's message                                       |
 | `%Answer%`        | Claude's reply                                            |
 | `%Progress%`      | (optional) Tool calls between Q and A, **summarized**     |

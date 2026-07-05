@@ -7,6 +7,9 @@
 //   %DateTime%   formatted timestamp ("2026/05/23 Sat 12:34:56")
 //   %SessionId%  full session UUID (always populated, even in
 //                --per-session mode where it duplicates the filename)
+//   %SessionName% human-readable session name — the user's custom title if
+//                set, otherwise Claude Code's auto-generated title, else
+//                empty (older logs that predate the title feature)
 //   %Question%   the user's text
 //   %Progress%   bullet list of tool calls / intermediate assistant
 //                turns, summarized (tool name + one key arg, result

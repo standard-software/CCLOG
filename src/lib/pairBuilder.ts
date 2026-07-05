@@ -72,6 +72,32 @@ function belongsToCurrentQuestion(e: UserEntry, current: Pair): boolean {
   return false;
 }
 
+/**
+ * The human-readable session name Claude Code shows in its resume list.
+ * Stored in the log as standalone entries:
+ *   {"type":"ai-title","aiTitle":"...","sessionId":"..."}       auto-generated
+ *   {"type":"custom-title","customTitle":"...","sessionId":"..."} user-set
+ * Both can appear many times (re-emitted as the title is refined); the last
+ * one wins. A user-set custom title takes precedence over the AI one.
+ * Returns '' when the session has no title (e.g. older logs that predate the
+ * feature) so a %SessionName% placeholder simply renders empty.
+ */
+export function extractSessionName(entries: LogEntry[]): string {
+  let aiTitle = '';
+  let customTitle = '';
+  for (const e of entries) {
+    if (!e || typeof e !== 'object') continue;
+    if (e.type === 'custom-title') {
+      const v = (e as { customTitle?: unknown }).customTitle;
+      if (typeof v === 'string' && v.trim() !== '') customTitle = v;
+    } else if (e.type === 'ai-title') {
+      const v = (e as { aiTitle?: unknown }).aiTitle;
+      if (typeof v === 'string' && v.trim() !== '') aiTitle = v;
+    }
+  }
+  return customTitle || aiTitle;
+}
+
 export interface BuildPairsOptions {
   includeSidechain?: boolean;
 }

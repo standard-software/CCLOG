@@ -5,7 +5,7 @@ import os from 'node:os';
 import { createRequire } from 'node:module';
 import { getLogDirForProject } from './lib/pathResolver.js';
 import { readJsonl } from './lib/jsonlReader.js';
-import { buildPairs } from './lib/pairBuilder.js';
+import { buildPairs, extractSessionName } from './lib/pairBuilder.js';
 import { loadConfig, PACKAGE_ROOT, CONFIG_FILE_NAME } from './lib/config.js';
 import {
   formatPair,
@@ -211,6 +211,7 @@ async function cleanupLegacyStateFiles(outDir: string, verbose: boolean): Promis
 
 interface SessionData {
   sessionId: string;
+  sessionName: string;
   jsonlPath: string;
   allPairs: Pair[];
   skippedLines: number;
@@ -238,6 +239,7 @@ async function readAllSessions(
     const r = await readJsonl(f.filePath);
     out.push({
       sessionId: sessionIdFor(f),
+      sessionName: extractSessionName(r.entries),
       jsonlPath: f.filePath,
       allPairs: buildPairs(r.entries, { includeSidechain }),
       skippedLines: r.skippedLines,
@@ -543,7 +545,7 @@ async function processProject(opts: CliOptions): Promise<void> {
 
       const content =
         buildSessionFileHeader(s.sessionId, s.jsonlPath, opts.projectPath) +
-        s.allPairs.map(p => formatPair(p, formatOpts)).join('');
+        s.allPairs.map(p => formatPair(p, formatOpts, s.sessionId, s.sessionName)).join('');
 
       let result: WriteResult | 'dry-run' = 'dry-run';
       if (!opts.dryRun) {
@@ -565,12 +567,13 @@ async function processProject(opts: CliOptions): Promise<void> {
   // Aggregate mode: merge all sessions' pairs, sort chronologically.
   interface AggItem {
     sessionId: string;
+    sessionName: string;
     pair: Pair;
   }
   const items: AggItem[] = [];
   for (const s of sessions) {
     for (const p of s.allPairs) {
-      items.push({ sessionId: s.sessionId, pair: p });
+      items.push({ sessionId: s.sessionId, sessionName: s.sessionName, pair: p });
     }
   }
   items.sort((a, b) => {
@@ -581,7 +584,7 @@ async function processProject(opts: CliOptions): Promise<void> {
 
   const content =
     buildAllInOneFileHeader(opts.projectPath, config.outputAllFileName) +
-    items.map(it => formatPair(it.pair, formatOpts, it.sessionId)).join('');
+    items.map(it => formatPair(it.pair, formatOpts, it.sessionId, it.sessionName)).join('');
 
   const filePath = path.join(opts.outDir, config.outputAllFileName);
   let result: WriteResult | 'dry-run' = 'dry-run';

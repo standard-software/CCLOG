@@ -42,7 +42,12 @@ export interface FormatOptions {
   template?: string;
 }
 
-export function formatPair(pair: Pair, opts: FormatOptions, sessionId?: string): string {
+export function formatPair(
+  pair: Pair,
+  opts: FormatOptions,
+  sessionId?: string,
+  sessionName?: string,
+): string {
   const tpl = opts.template ?? DEFAULT_TEMPLATE;
   const mode = progressMode(tpl);
   const wantProgress = mode !== 'none';
@@ -114,6 +119,7 @@ export function formatPair(pair: Pair, opts: FormatOptions, sessionId?: string):
   return renderTemplate(tpl, {
     DateTime: ts,
     SessionId: sessionId ?? '',
+    SessionName: sessionName ?? '',
     Question: safeQuestion,
     Progress: progressText,
     ProgressFull: progressText,
