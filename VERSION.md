@@ -2,26 +2,11 @@
 
 ## Version
 
-### 1.5.0-beta.3
+### 1.5.0
 #### 2026/07/06(Mon)
-- add `%SessionName%` template placeholder: the human-readable session name Claude Code shows in its resume list
-  - resolved from the log's `custom-title` (user-set) entry if present, otherwise the `ai-title` (auto-generated) entry, otherwise empty for sessions that predate the title feature
-  - the last title entry wins (titles are re-emitted as they are refined); a user-set custom title always takes precedence over the AI one
-  - opt-in: add `%SessionName%` to your template. The bundled templates and the built-in default are unchanged, so existing output is unaffected
-
-### 1.5.0-beta.2
-#### 2026/07/06(Mon)
-- add `--backup-md` CLI flag: a standalone action (mirroring `--backup-jsonl`) that copies the already-exported Markdown (the aggregated file plus any per-session files in `<out>`) into `<out>/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<hostname>/` and exits without regenerating anything
-  - same folder cclog auto-populates before a destructive rewrite, but triggered on demand — e.g. to snapshot the current output before editing the config or switching template
-  - honors `--dry-run` (reports the destination) and `--verbose` (logs each copied file); old folders are pruned to the most recent 20 (shared with the automatic backups)
-
-### 1.5.0-beta.1
-#### 2026/07/06(Mon)
-- add `outputAllFileName` and `outputSessionFilePrefix` config options in `cclog.config.json`
-  - `outputAllFileName` (default `"CCLOG_ALL.md"`): filename for the aggregated Markdown output
-  - `outputSessionFilePrefix` (default `"CCLOG_"`): prefix for per-session Markdown files (`--per-session`); the file name becomes `<prefix><sessionId>.md`. Empty string is allowed (no prefix)
-  - the title inside the aggregated file (`# CCLOG_ALL`) is now derived from `outputAllFileName` (basename without `.md`); the default filename keeps the existing `# CCLOG_ALL` title unchanged
-  - existing installs continue to write `CCLOG_ALL.md` / `CCLOG_<sessionId>.md` with no config changes
+- add `outputAllFileName` / `outputSessionFilePrefix` config options to rename the output (default `CCLOG_ALL.md` / `CCLOG_` prefix; the aggregate file's title follows its basename). Defaults keep existing output unchanged.
+- add `--backup-md`: on-demand copy of the exported Markdown into `backup_CCLOG_md/` (same as the automatic pre-rewrite backup), mirroring `--backup-jsonl`.
+- add `%SessionName%` template placeholder: the session name from the log's `custom-title` (else `ai-title`, else empty). Opt-in via template.
 
 ### 1.4.0
 #### 2026/07/02(Thu)
