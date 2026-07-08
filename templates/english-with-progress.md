@@ -1,17 +1,10 @@
-# %DateTime%
-
-Session: %SessionId%
-
+# %DateTime%   Session:%SessionName%:%SessionId%
 ## Question
-
 %Question%
-
-## Progress
-
-%Progress%
-
-## Answer
 <!--
+## Progress
+%Progress%
+## Answer
 %Answer%
 -->
 

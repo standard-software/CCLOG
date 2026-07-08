@@ -5,7 +5,7 @@
 Export Claude Code session logs (JSONL) to a single readable Markdown file.
 
 `cclog` reads the JSONL session logs that Claude Code writes under
-`~/.claude/projects/<encoded project path>/` and renders them as `CCLOG_ALL.md`
+`~/.claude/projects/<encoded project path>/` and renders them as `cclog.md`
 (or one file per session) in your project. The output is regenerated
 on every run, but the file is only modified when its content would
 actually change — and when the new content is a strict append, only
@@ -30,7 +30,7 @@ cd /path/to/your/project
 cclog
 ```
 
-This writes `CCLOG/CCLOG_ALL.md` with every Q&A pair from every session
+This writes `CCLOG/cclog.md` with every Q&A pair from every session
 for that project, sorted chronologically.
 
 ### Options
@@ -43,14 +43,14 @@ Arguments:
 
 Options:
   --out <dir>            Output directory (default: <project-path>/CCLOG).
-  --per-session          Write one file per session (CCLOG_<sessionId>.md)
-                         instead of the aggregated CCLOG_ALL.md.
+  --per-session          Write one file per session (cclog_<sessionId>.md)
+                         instead of the aggregated cclog.md.
   --init-template        Copy the bundled template into <out>/templates/ and
                          rewrite cclog.config.json to use the local copy
                          (lets you edit it without touching the global install).
   --backup-jsonl         Back up only: copy the discovered source .jsonl logs
                          into <out>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>_<hostname>/
-                         and exit WITHOUT writing CCLOG_ALL.md / per-session
+                         and exit WITHOUT writing cclog.md / per-session
                          files (preserves the raw logs locally — e.g. before
                          swapping PCs, since the source log location is derived
                          from the machine-specific project path). The folder
@@ -86,7 +86,7 @@ This copies every discovered `.jsonl` into
 folder per run, with the machine name from `os.hostname()` appended so
 backups stay attributable per PC). `--backup-jsonl` is a **standalone
 action**: it backs up only and exits, so it does **not** (re)write
-`CCLOG_ALL.md` or the per-session files — run `cclog` without the flag for
+`cclog.md` or the per-session files — run `cclog` without the flag for
 that. Each backup keeps the session's original `<uuid>.jsonl` filename, so
 the files can be re-used later. Combine with
 `--dry-run` to preview the destination without copying, or `--verbose` to
@@ -109,8 +109,8 @@ to customize behavior:
   "recursive": false,
   "includeSidechain": false,
   "recoverSlashCommandBody": true,
-  "outputAllFileName": "CCLOG_ALL.md",
-  "outputSessionFilePrefix": "CCLOG_",
+  "outputAllFileName": "cclog.md",
+  "outputSessionFilePrefix": "cclog_",
   "template": "templates/japanese.md"
 }
 ```
@@ -125,9 +125,19 @@ paths on Ubuntu/macOS (`/home/you/...`).
 | `recursive`               | If `true`, descend into subdirectories of each log dir (e.g. subagent logs).|
 | `includeSidechain`        | If `true`, include subagent / sidechain pairs in the output.                |
 | `recoverSlashCommandBody` | If `true` (default), restore a slash-command question whose injected body Claude Code truncated in the log, using the full text from the Read of the command's own `commands/<name>.md`. |
-| `outputAllFileName`       | Filename for the aggregated output. Default `CCLOG_ALL.md`. The title inside the file is derived from the basename (e.g. setting `cclog.md` also changes the header to `# cclog`). |
-| `outputSessionFilePrefix` | Prefix for per-session filenames (used with `--per-session`). Default `CCLOG_`, so files are `CCLOG_<sessionId>.md`. Empty string means no prefix. |
+| `outputAllFileName`       | Filename for the aggregated output. Default `cclog.md`. The title inside the file is derived from the basename (e.g. setting `mylog.md` also changes the header to `# mylog`). |
+| `outputSessionFilePrefix` | Prefix for per-session filenames (used with `--per-session`). Default `cclog_`, so files are `cclog_<sessionId>.md`. Empty string means no prefix. |
 | `template`                | Path to a Markdown template. Resolved against cclog's own `templates/` dir first, then your CCLOG dir. |
+
+To keep the pre-1.6.0 output names (`CCLOG_ALL.md` and `CCLOG_<sessionId>.md`),
+set:
+
+```json
+{
+  "outputAllFileName": "CCLOG_ALL.md",
+  "outputSessionFilePrefix": "CCLOG_"
+}
+```
 
 ### Templates
 
@@ -186,25 +196,24 @@ and does not overwrite, but still re-applies the config rewrite.
 
 ## Output format
 
-`CCLOG_ALL.md` is a flat chronological sequence of Q&A blocks. Each
+`cclog.md` is a flat chronological sequence of Q&A blocks. Each
 block is rendered from the template. By default (English template):
 
 ```markdown
-# 2026/05/27 Wed 11:03:49
-
-Session: ec5e9974-80a6-4baa-a701-0e29589674da
-
+# 2026/05/27 Wed 11:03:49   Session:My first session:ec5e9974-80a6-4baa-a701-0e29589674da
 ## Question
-
 Hello, can you help me with X?
-
-## Answer
 <!--
+## Answer
 Sure, here's how...
 -->
 
 ----------------------------------------
 ```
+
+The session name between the two colons comes from `%SessionName%` — the
+custom title if you set one in Claude Code, otherwise the auto-generated
+title, otherwise empty (`Session::<uuid>`).
 
 The `<!-- -->` around the answer is mainly there because Claude's reply
 often contains its own Markdown formatting (headings, lists, code blocks)
@@ -218,9 +227,9 @@ answers expanded by default.
 
 - The output is fully regenerated on every run; if you delete a session
   log under `~/.claude/projects/...`, the corresponding pairs disappear
-  from `CCLOG_ALL.md` on the next run.
+  from `cclog.md` on the next run.
 - **Pre-overwrite backup of the Markdown.** When a run would *fully
-  rewrite* an existing `CCLOG_*.md` (a non-append change — e.g. you ran
+  rewrite* an existing output `.md` (a non-append change — e.g. you ran
   cclog on a different PC where the synced `.md` no longer matches the
   local `.jsonl`, or you changed the template), the existing file is first
   copied to `CCLOG/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<hostname>/` so

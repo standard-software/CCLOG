@@ -93,11 +93,11 @@ Arguments:
 
 Options:
   --out <dir>            Output directory (default: <project-path>/CCLOG).
-  --per-session          Write one file per session (CCLOG/CCLOG_<sessionId>.md
+  --per-session          Write one file per session (CCLOG/cclog_<sessionId>.md
                          by default; the prefix and aggregate filename can be
                          customized via cclog.config.json — see
                          outputSessionFilePrefix / outputAllFileName) instead of
-                         the aggregated CCLOG/CCLOG_ALL.md.
+                         the aggregated CCLOG/cclog.md.
   --init-template        Copy the currently-configured template (or the English
                          default if no config exists) from cclog's install
                          location into <out>/templates/ and rewrite
@@ -105,7 +105,7 @@ Options:
                          edit the template without touching the global install.
   --backup-jsonl         Back up only: copy the discovered source .jsonl logs
                          into <out>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>_<hostname>/
-                         and exit WITHOUT writing CCLOG_ALL.md / per-session
+                         and exit WITHOUT writing cclog.md / per-session
                          files. Lets you preserve the raw session logs locally
                          (e.g. before swapping PCs, since the source path
                          encoding — and thus the log location — changes per
@@ -117,7 +117,7 @@ Options:
                          ss>_<hostname>/ and exit WITHOUT regenerating anything.
                          This is the same folder cclog auto-populates before a
                          destructive rewrite, but triggered on demand — e.g. to
-                         snapshot the current CCLOG_ALL.md before editing the
+                         snapshot the current cclog.md before editing the
                          config or template. Old folders are pruned to the most
                          recent 20 (shared with the automatic backups).
   --dry-run              Don't write files; report what would be written.
@@ -139,7 +139,7 @@ only modified when its content would actually change. When the new
 content is a strict append on top of the existing file, only the tail
 is appended (so editors don't reload from the top). When a full rewrite
 is required instead (a non-append change — e.g. a different PC
-environment or a template change), the existing CCLOG_*.md is first
+environment or a template change), the existing output .md is first
 copied to <out>/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<hostname>/ so the
 pre-overwrite version is never lost. create/noop/append never back up.
 `);
@@ -337,7 +337,8 @@ async function backupJsonlFiles(
 // Which already-exported Markdown files in outDir should --backup-md copy:
 // the aggregated file (config.outputAllFileName) plus every per-session file
 // (<outputSessionFilePrefix><id>.md). The aggregate name often also matches
-// the session prefix (default CCLOG_ALL.md starts with CCLOG_), so results are
+// the session prefix (an aggregate name like CCLOG_ALL.md can also match a
+// CCLOG_ session prefix), so results are
 // de-duplicated. Only top-level .md files are considered — the backup_* and
 // templates/ subdirectories are never descended into.
 async function listExportedMdFiles(
@@ -500,7 +501,7 @@ async function processProject(opts: CliOptions): Promise<void> {
   }
 
   // --backup-jsonl is a standalone action: copy the raw source logs and
-  // exit, without regenerating CCLOG_ALL.md / per-session Markdown.
+  // exit, without regenerating the aggregated / per-session Markdown.
   if (opts.backupJsonl) {
     if (opts.dryRun) {
       console.log(
@@ -524,7 +525,7 @@ async function processProject(opts: CliOptions): Promise<void> {
     template: config.template,
   };
 
-  // Pre-overwrite backup target for this run: existing CCLOG_*.md files are
+  // Pre-overwrite backup target for this run: existing output .md files are
   // copied here right before a full rewrite (non-append change) overwrites
   // them. Computed once so every file rewritten in this run shares one
   // timestamped folder; the folder itself is created lazily on first use.

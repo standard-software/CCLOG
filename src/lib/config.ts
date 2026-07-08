@@ -22,14 +22,15 @@ export interface CclogConfig {
    */
   recoverSlashCommandBody: boolean;
   /**
-   * Filename for the aggregated Markdown output (default `CCLOG_ALL.md`).
+   * Filename for the aggregated Markdown output (default `cclog.md`).
    * The header title inside the file is derived from this basename.
+   * Set to "CCLOG_ALL.md" to keep the pre-1.6.0 filename.
    */
   outputAllFileName: string;
   /**
-   * Prefix for per-session Markdown files (default `CCLOG_`). The
+   * Prefix for per-session Markdown files (default `cclog_`). The
    * per-session filename is `<prefix><sessionId>.md`. Empty string means
-   * no prefix.
+   * no prefix. Set to "CCLOG_" to keep the pre-1.6.0 naming.
    */
   outputSessionFilePrefix: string;
   /**
@@ -47,8 +48,8 @@ export const DEFAULT_CONFIG: CclogConfig = {
   recursive: false,
   includeSidechain: false,
   recoverSlashCommandBody: true,
-  outputAllFileName: 'CCLOG_ALL.md',
-  outputSessionFilePrefix: 'CCLOG_',
+  outputAllFileName: 'cclog.md',
+  outputSessionFilePrefix: 'cclog_',
   template: DEFAULT_TEMPLATE,
 };
 

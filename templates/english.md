@@ -1,13 +1,8 @@
-# %DateTime%
-
-Session: %SessionId%
-
+# %DateTime%   Session:%SessionName%:%SessionId%
 ## Question
-
 %Question%
-
-## Answer
 <!--
+## Answer
 %Answer%
 -->
 

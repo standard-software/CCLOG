@@ -192,9 +192,9 @@ export function buildSessionFileHeader(
 export function buildAllInOneFileHeader(projectPath: string, fileName: string): string {
   // Title inside the file mirrors the output filename (basename without
   // its extension) so a custom `outputAllFileName` in cclog.config.json is
-  // reflected in the header too. Empty basename falls back to CCLOG_ALL.
+  // reflected in the header too. Empty basename falls back to cclog.
   const base = path.basename(fileName, path.extname(fileName));
-  const title = base || 'CCLOG_ALL';
+  const title = base || 'cclog';
   return [
     NOTICE,
     `# ${title}`,

@@ -29,16 +29,11 @@
 // are drop-in alternatives; the in-code default below matches
 // templates/english.md and is the fallback when nothing else loads.
 
-export const DEFAULT_TEMPLATE = `# %DateTime%
-
-Session: %SessionId%
-
+export const DEFAULT_TEMPLATE = `# %DateTime%   Session:%SessionName%:%SessionId%
 ## Question
-
 %Question%
-
-## Answer
 <!--
+## Answer
 %Answer%
 -->
 
