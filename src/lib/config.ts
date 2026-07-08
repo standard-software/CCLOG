@@ -15,6 +15,13 @@ export interface CclogConfig {
   recursive: boolean;
   includeSidechain: boolean;
   /**
+   * Recover slash-command questions whose injected body Claude Code truncated
+   * in the log, by substituting the full text from the Read tool_result of the
+   * command's own `.md` file when present. Default true. Set false to render
+   * the question exactly as the (possibly truncated) log entry stored it.
+   */
+  recoverSlashCommandBody: boolean;
+  /**
    * Filename for the aggregated Markdown output (default `CCLOG_ALL.md`).
    * The header title inside the file is derived from this basename.
    */
@@ -39,6 +46,7 @@ export const DEFAULT_CONFIG: CclogConfig = {
   extraLogDirs: [],
   recursive: false,
   includeSidechain: false,
+  recoverSlashCommandBody: true,
   outputAllFileName: 'CCLOG_ALL.md',
   outputSessionFilePrefix: 'CCLOG_',
   template: DEFAULT_TEMPLATE,
@@ -97,6 +105,7 @@ export async function loadConfig(outDir: string): Promise<{
     extraLogDirs: asStringArray(obj.extraLogDirs),
     recursive: asBool(obj.recursive, DEFAULT_CONFIG.recursive),
     includeSidechain: asBool(obj.includeSidechain, DEFAULT_CONFIG.includeSidechain),
+    recoverSlashCommandBody: asBool(obj.recoverSlashCommandBody, DEFAULT_CONFIG.recoverSlashCommandBody),
     outputAllFileName: asNonEmptyString(obj.outputAllFileName, DEFAULT_CONFIG.outputAllFileName),
     outputSessionFilePrefix: typeof obj.outputSessionFilePrefix === 'string'
       ? obj.outputSessionFilePrefix

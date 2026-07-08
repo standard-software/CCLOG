@@ -2,6 +2,10 @@
 
 ## Version
 
+### 1.6.0-beta.1
+#### 2026/07/08(Wed)
+- recover slash-command questions that Claude Code truncated in the log: when a `/cmd` question's injected body is cut off but the full text survives in the Read `tool_result` of `commands/cmd.md`, cclog substitutes the complete body (matched by command name + `commands/` path + prefix check, so complete bodies and unrelated pairs are never touched). New config `recoverSlashCommandBody` (default `true`) turns it off.
+
 ### 1.5.0
 #### 2026/07/06(Mon)
 - add `outputAllFileName` / `outputSessionFilePrefix` config options to rename the output (default `CCLOG_ALL.md` / `CCLOG_` prefix; the aggregate file's title follows its basename). Defaults keep existing output unchanged.
