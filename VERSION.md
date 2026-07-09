@@ -2,14 +2,11 @@
 
 ## Version
 
-### 1.6.0-beta.2
-#### 2026/07/09(Thu)
-- **breaking**: default output filenames changed — aggregated `CCLOG_ALL.md` → `cclog.md`, per-session prefix `CCLOG_` → `cclog_`. Set `outputAllFileName": "CCLOG_ALL.md"` / `"outputSessionFilePrefix": "CCLOG_"` in `cclog.config.json` to keep the old names (see README).
-- bundled templates redesigned: single-line header `# %DateTime%   Session:%SessionName%:%SessionId%`, Question visible, Answer (and Progress in the -with-progress variants) folded inside the HTML comment.
-
-### 1.6.0-beta.1
-#### 2026/07/08(Wed)
-- recover slash-command questions that Claude Code truncated in the log: when a `/cmd` question's injected body is cut off but the full text survives in the Read `tool_result` of `commands/cmd.md`, cclog substitutes the complete body (matched by command name + `commands/` path + prefix check, so complete bodies and unrelated pairs are never touched). New config `recoverSlashCommandBody` (default `true`) turns it off.
+### 1.6.0
+#### 2026/07/10(Fri)
+- **breaking**: default output filenames changed — aggregated `CCLOG_ALL.md` → `cclog.md`, per-session prefix `CCLOG_` → `cclog_`. Set `outputAllFileName` / `outputSessionFilePrefix` in `cclog.config.json` to restore the old names (see README).
+- redesign bundled templates: single-line header `# %DateTime%   Session:%SessionName%:%SessionId%`, Question visible, Answer (and Progress) folded inside the HTML comment.
+- recover slash-command questions truncated in the log: the full body is restored from the Read `tool_result` of the command's own `commands/<name>.md` (prefix-checked, so complete bodies are never altered). Config `recoverSlashCommandBody` (default `true`) disables it.
 
 ### 1.5.0
 #### 2026/07/06(Mon)
