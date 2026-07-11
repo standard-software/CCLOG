@@ -118,8 +118,8 @@ Options:
                          This is the same folder cclog auto-populates before a
                          destructive rewrite, but triggered on demand — e.g. to
                          snapshot the current cclog.md before editing the
-                         config or template. Old folders are pruned to the most
-                         recent 20 (shared with the automatic backups).
+                         config or template. Backup folders accumulate and are
+                         never pruned (shared with the automatic backups).
   --dry-run              Don't write files; report what would be written.
   --verbose              Verbose logging.
   -v, -V, --version      Show version and exit.
@@ -276,34 +276,6 @@ function backupFolderName(d: Date): string {
 
 const BACKUP_DIR_NAME = 'backup_jsonl';
 const MD_BACKUP_DIR_NAME = 'backup_CCLOG_md';
-const MD_BACKUP_KEEP = 20;
-
-// Delete oldest folders in <backupRoot> so at most MD_BACKUP_KEEP remain.
-// Folders are timestamp-prefixed so lexicographic sort matches chronological
-// order. Called after a successful destructive-rewrite backup — keeps disk
-// usage bounded without hiding recent history.
-async function pruneOldBackupFolders(backupRoot: string): Promise<void> {
-  let entries: string[];
-  try {
-    entries = await fs.readdir(backupRoot);
-  } catch {
-    return;
-  }
-  const folders: string[] = [];
-  for (const name of entries) {
-    try {
-      const st = await fs.stat(path.join(backupRoot, name));
-      if (st.isDirectory()) folders.push(name);
-    } catch {
-      // skip
-    }
-  }
-  folders.sort();
-  const toDelete = folders.slice(0, Math.max(0, folders.length - MD_BACKUP_KEEP));
-  for (const name of toDelete) {
-    await fs.rm(path.join(backupRoot, name), { recursive: true, force: true });
-  }
-}
 
 // Copy every discovered source .jsonl into
 // <outDir>/backup_jsonl/<yyyy-mm-dd_hh-mm-ss>_<hostname>/ so the raw logs
@@ -372,10 +344,11 @@ async function listExportedMdFiles(
 }
 
 // Copy the existing exported Markdown into
-// <outDir>/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<hostname>/ on demand, then
-// prune to the most recent MD_BACKUP_KEEP folders (shared with the automatic
-// pre-overwrite backups). Standalone action for --backup-md; does not read
-// jsonl or regenerate any Markdown.
+// <outDir>/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<hostname>/ on demand
+// (shared with the automatic pre-overwrite backups). Standalone action for
+// --backup-md; does not read jsonl or regenerate any Markdown. Backup folders
+// accumulate and are never pruned — they are the durable archive of dropped
+// history, so retention is intentionally unbounded.
 async function backupMdFiles(
   mdFiles: string[],
   outDir: string,
@@ -390,7 +363,6 @@ async function backupMdFiles(
     if (verbose) console.log(`  backup: ${f} -> ${path.basename(f)}`);
   }
   console.log(`Backed up ${copied} md file(s) to ${destDir}`);
-  await pruneOldBackupFolders(path.join(outDir, MD_BACKUP_DIR_NAME));
 }
 
 async function resolveRealPath(p: string): Promise<string> {
@@ -561,7 +533,6 @@ async function processProject(opts: CliOptions): Promise<void> {
     }
     if (backedUpCount > 0 && mdBackupDir) {
       console.log(`Backed up ${backedUpCount} pre-overwrite md file(s) to ${mdBackupDir}`);
-      await pruneOldBackupFolders(path.join(opts.outDir, MD_BACKUP_DIR_NAME));
     }
     console.log(`Done. ${totalPairs} pair(s) total${opts.dryRun ? ' (dry run)' : ''}.`);
     return;
@@ -604,7 +575,6 @@ async function processProject(opts: CliOptions): Promise<void> {
   }
   if (backedUp && mdBackupDir) {
     console.log(`Backed up 1 pre-overwrite md file to ${mdBackupDir}`);
-    await pruneOldBackupFolders(path.join(opts.outDir, MD_BACKUP_DIR_NAME));
   }
   console.log(`Done. ${items.length} pair(s) total [${result}]${opts.dryRun ? ' (dry run)' : ''}.`);
 }

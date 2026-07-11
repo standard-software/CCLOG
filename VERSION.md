@@ -2,6 +2,10 @@
 
 ## Version
 
+### 1.7.0
+#### 2026/07/11(Sat)
+- **breaking**: `backup_CCLOG_md/` folders are no longer pruned. Previously the directory was capped at the 20 most recent folders; older ones were deleted after each backup. But each destructive rewrite (e.g. a session whose jsonl was aged out by Claude Code) drops that session's only surviving snapshot into a single backup folder — so pruning could silently discard the last remaining copy of old history. Backups now accumulate without bound; they are the durable archive.
+
 ### 1.6.0
 #### 2026/07/10(Fri)
 - **breaking**: default output filenames changed — aggregated `CCLOG_ALL.md` → `cclog.md`, per-session prefix `CCLOG_` → `cclog_`. Set `outputAllFileName` / `outputSessionFilePrefix` in `cclog.config.json` to restore the old names (see README).
