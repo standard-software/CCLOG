@@ -26,8 +26,6 @@
 //   %Cwd%        working directory at the time of the question
 //   %Tokens%     token usage summed over the pair's assistant turns
 //                ("in 6, out 33, cache read 21,758, cache write 8,730")
-//   %Cost%       rough USD estimate from those tokens ("$0.0042"); empty
-//                for models absent from the pricing table in metaExtractor.ts
 //
 // Whether — and how verbosely — progress is rendered is decided purely
 // by which placeholder the template contains: none -> no progress,
@@ -41,7 +39,7 @@
 export const DEFAULT_TEMPLATE = `# %DateTime%   Session:%SessionName%:%SessionId%
 Model=%Model% Version=%Version%
 Branch=%GitBranch% Cwd=%Cwd%
-Tokens=%Tokens% Cost=%Cost%
+Tokens=%Tokens%
 ## Question
 %Question%
 <!--

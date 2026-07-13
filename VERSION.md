@@ -2,6 +2,10 @@
 
 ## Version
 
+### 1.8.0-beta.5
+#### 2026/07/14(Tue)
+- remove `%Cost%`: a price computed at render time from a hardcoded rate table goes stale and silently rewrites historical "costs" whenever the table changes — not a fact worth exporting. `%Tokens%` stays (it IS recorded fact); cost can be derived from it externally when needed. A custom template still containing `%Cost%` now renders the literal text.
+
 ### 1.8.0-beta.4
 #### 2026/07/14(Tue)
 - fix `%Cost%` pricing table: add `fable`/`mythos` ($10/$50 per MTok — previously absent, so all Fable pairs rendered `Cost=` empty) and correct the current Opus tier (4.5+) to $5/$25. The old $15/$75 rate applied to opus-4-6/4-7/4-8 was the legacy Opus (≤4.1) price; legacy model ids keep $15/$75. Cost values in already-exported Markdown are recomputed on the next run (non-destructive rewrite).

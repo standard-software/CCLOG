@@ -166,7 +166,6 @@ A template can use the following placeholders:
 | `%GitBranch%`     | Git branch at the time of the question                    |
 | `%Cwd%`           | Working directory at the time of the question             |
 | `%Tokens%`        | Token usage summed over the pair's assistant turns (`in 6, out 33, cache read 21,758, cache write 8,730`) |
-| `%Cost%`          | Rough USD estimate from those tokens (`$0.2971`); empty for models missing from the pricing table |
 
 Whether — and how verbosely — the progress section is rendered is decided
 entirely by the template:
@@ -225,7 +224,7 @@ block is rendered from the template. By default (English template):
 # 2026/05/27 Wed 11:03:49   Session:My first session:ec5e9974-80a6-4baa-a701-0e29589674da
 Model=claude-opus-4-7 Version=2.1.152
 Branch=main Cwd=C:\Users\satoshi\projects\my-app
-Tokens=in 6, out 33, cache read 21,758, cache write 8,730 Cost=$0.2971
+Tokens=in 6, out 33, cache read 21,758, cache write 8,730
 ## Question
 Hello, can you help me with X?
 <!--

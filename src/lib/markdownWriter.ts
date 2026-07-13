@@ -18,7 +18,6 @@ import {
   extractCwd,
   extractTokenTotals,
   formatTokens,
-  formatCost,
 } from './metaExtractor.js';
 import type { Pair, UserEntry, AssistantEntry, ContentBlock } from './types.js';
 
@@ -126,11 +125,8 @@ export function formatPair(
   // so a template wrapping %Progress% in a comment stays intact.
   const progressText = progressLines.join('\n').replaceAll('-->', '-- >').replaceAll('<!--', '<! --');
 
-  // Per-pair metadata pulled straight from the JSONL entries. Model/Cost skip
+  // Per-pair metadata pulled straight from the JSONL entries. Model skips
   // synthetic entries; Tokens sums usage across the pair's assistant turns.
-  const model = extractModel(pair);
-  const tokens = extractTokenTotals(pair);
-
   return renderTemplate(tpl, {
     DateTime: ts,
     SessionId: sessionId ?? '',
@@ -139,12 +135,11 @@ export function formatPair(
     Progress: progressText,
     ProgressFull: progressText,
     Answer: safeAnswer,
-    Model: model,
+    Model: extractModel(pair),
     Version: extractVersion(pair),
     GitBranch: extractGitBranch(pair),
     Cwd: extractCwd(pair),
-    Tokens: formatTokens(tokens),
-    Cost: formatCost(model, tokens),
+    Tokens: formatTokens(extractTokenTotals(pair)),
   });
 }
 

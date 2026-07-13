@@ -1,7 +1,7 @@
 # %DateTime%   Session:%SessionName%:%SessionId%
 Model=%Model% Version=%Version%
 Branch=%GitBranch% Cwd=%Cwd%
-Tokens=%Tokens% Cost=%Cost%
+Tokens=%Tokens%
 ## 質問
 %Question%
 <!--
