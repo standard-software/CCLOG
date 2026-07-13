@@ -202,16 +202,19 @@ and does not overwrite, but still re-applies the config rewrite.
 
 > **⚠️ Keep the first line starting with `# %DateTime%`.**
 > The automatic pre-overwrite backup (see Notes below) identifies each
-> Q&A block by its rendered header line — a line beginning
-> `# YYYY/MM/DD ...`. A rewrite backs up the old file only when one of
-> those identity lines would *disappear*, i.e. when content is actually
+> Q&A block solely by the `# YYYY/MM/DD Day HH:MM:SS` prefix of its
+> header line — everything after the timestamp on that line is ignored.
+> The question timestamp never changes for a given pair, so template
+> changes (even to the rest of the header line) and session renames
+> never trigger a backup; a rewrite backs up the old file only when one
+> of those timestamps would *disappear*, i.e. when a pair is actually
 > being lost. If your custom template doesn't render a line starting
 > with `# %DateTime%`, no block has an identity anymore and the
 > detector goes blind: **the backup will never fire again**, even when
 > sessions genuinely vanish from the output (e.g. their `.jsonl` was
 > deleted). All six bundled templates keep this form — if you customize,
-> change anything you like *below* the header line, but leave the
-> `# %DateTime%` prefix at the start of the block.
+> change anything you like after the `%DateTime%` (same line or below),
+> but start the block with `# %DateTime%`.
 
 ## Output format
 
@@ -252,9 +255,10 @@ answers expanded by default.
   from `cclog.md` on the next run.
 - **Pre-overwrite backup of the Markdown.** When a run would rewrite an
   existing output `.md` *destructively* — at least one Q&A block present
-  in the old file is missing from the new content (its `# YYYY/MM/DD ...`
-  header line no longer appears; e.g. a session's `.jsonl` was deleted,
-  or you ran cclog on a different PC that doesn't see some sessions) —
+  in the old file is missing from the new content (its
+  `# YYYY/MM/DD Day HH:MM:SS` timestamp prefix no longer appears on any
+  header line; e.g. a session's `.jsonl` was deleted, or you ran cclog
+  on a different PC that doesn't see some sessions) —
   the existing file is first copied to
   `CCLOG/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<hostname>/` so the
   previous version is never lost. Backup folders accumulate and are never

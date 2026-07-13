@@ -258,25 +258,33 @@ async function backupBeforeOverwrite(filePath: string, backupDir: string): Promi
 // contain the 40-hyphen SEP line and our splitter over-splits there.
 const TS_HEADER_PATTERN = /^# \d{4}\/\d{2}\/\d{2} /;
 
-// Extract a stable per-block identity — lines that don't drift as the
-// answer text is streamed to completion. All bundled templates put the
-// question timestamp on a line matching TS_HEADER_PATTERN and the session
-// id on a line starting with 'Session:'. Together these uniquely identify
-// a Q&A pair. Returns null when the block has no timestamp header — a
-// phantom created by a body-embedded SEP line — so isDestructiveRewrite
-// can skip it instead of turning body content into a spurious identity.
+// The full `# %DateTime%` prefix as rendered by formatTimestamp:
+// `# YYYY/MM/DD Day HH:MM:SS`. Only this prefix is the block identity.
+const TS_IDENTITY_PATTERN = /^# \d{4}\/\d{2}\/\d{2} \w{3} \d{2}:\d{2}:\d{2}/;
 
+// Extract a stable per-block identity: ONLY the leading `# %DateTime%`
+// prefix of the header line. Everything after it on the line (session
+// name/id, or whatever a template appends) is deliberately ignored, so
+// header-line template changes and session renames no longer read as
+// "every old identity vanished" and fire a pointless full backup — the
+// question timestamp never changes for a given pair, no matter the
+// template. Trade-off: two pairs stamped in the same second collapse to
+// one identity, so a vanished pair can hide behind a same-second
+// survivor and skip its backup; second-level collisions across sessions
+// are rare enough that predictable backups win. Returns null when the
+// block has no timestamp header — a phantom created by a body-embedded
+// SEP line — so isDestructiveRewrite can skip it instead of turning body
+// content into a spurious identity. Falls back to the whole line if the
+// header matches only the loose date form (hand-written header without
+// the time part).
 function extractBlockIdentity(block: string): string | null {
-  const lines = block.split('\n');
-  let dt = '';
-  let sid = '';
-  for (const line of lines) {
-    if (!dt && TS_HEADER_PATTERN.test(line)) dt = line;
-    else if (!sid && line.startsWith('Session:')) sid = line;
-    if (dt && sid) break;
+  for (const line of block.split('\n')) {
+    if (TS_HEADER_PATTERN.test(line)) {
+      const m = TS_IDENTITY_PATTERN.exec(line);
+      return m ? m[0] : line;
+    }
   }
-  if (!dt) return null;
-  return `${dt}${sid}`;
+  return null;
 }
 
 // A "rewrite" is destructive only when the new body has dropped at least

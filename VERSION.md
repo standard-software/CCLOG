@@ -2,6 +2,10 @@
 
 ## Version
 
+### 1.8.0-beta.3
+#### 2026/07/14(Tue)
+- destructive-rewrite detection now uses ONLY the `# YYYY/MM/DD Day HH:MM:SS` prefix of each block's header line as the block identity — everything after it on the line (session name/id, metadata) is ignored. The question timestamp is fixed at second precision and never changes for a given pair, so header-line template changes and session renames no longer fire a pointless full backup; a backup now means pairs actually disappeared. (Trade-off: two pairs stamped in the same second share one identity, so a vanished pair could hide behind a same-second survivor — rare enough that predictable backups win.)
+
 ### 1.8.0-beta.2
 #### 2026/07/14(Tue)
 - fix: log discovery failed (`No session logs found`) for any project whose path contains a character outside `[a-zA-Z0-9]` other than `\` `/` `:` — e.g. `_`, `.`, spaces. `encodeCwd()` only replaced path separators, but Claude Code encodes EVERY non-alphanumeric character as `-` (`...\2026-06-23_Malme_Hajimari` → `...-2026-06-23-Malme-Hajimari`), so cclog searched a folder that doesn't exist. Now mirrors Claude Code's rule exactly.
