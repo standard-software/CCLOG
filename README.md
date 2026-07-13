@@ -161,6 +161,12 @@ A template can use the following placeholders:
 | `%Answer%`        | Claude's reply                                            |
 | `%Progress%`      | (optional) Tool calls between Q and A, **summarized**     |
 | `%ProgressFull%`  | (optional) Same, but full tool input/output JSON + thinking |
+| `%Model%`         | Model that produced the answer (`claude-opus-4-8`); synthetic entries are skipped |
+| `%Version%`       | Claude Code version the pair ran under (`2.1.205`)       |
+| `%GitBranch%`     | Git branch at the time of the question                    |
+| `%Cwd%`           | Working directory at the time of the question             |
+| `%Tokens%`        | Token usage summed over the pair's assistant turns (`in 6, out 33, cache read 21,758, cache write 8,730`) |
+| `%Cost%`          | Rough USD estimate from those tokens (`$0.2971`); empty for models missing from the pricing table |
 
 Whether — and how verbosely — the progress section is rendered is decided
 entirely by the template:
@@ -194,6 +200,19 @@ After that, edit `CCLOG/templates/japanese.md` directly. Re-running
 `--init-template` when the destination already exists prints an error
 and does not overwrite, but still re-applies the config rewrite.
 
+> **⚠️ Keep the first line starting with `# %DateTime%`.**
+> The automatic pre-overwrite backup (see Notes below) identifies each
+> Q&A block by its rendered header line — a line beginning
+> `# YYYY/MM/DD ...`. A rewrite backs up the old file only when one of
+> those identity lines would *disappear*, i.e. when content is actually
+> being lost. If your custom template doesn't render a line starting
+> with `# %DateTime%`, no block has an identity anymore and the
+> detector goes blind: **the backup will never fire again**, even when
+> sessions genuinely vanish from the output (e.g. their `.jsonl` was
+> deleted). All six bundled templates keep this form — if you customize,
+> change anything you like *below* the header line, but leave the
+> `# %DateTime%` prefix at the start of the block.
+
 ## Output format
 
 `cclog.md` is a flat chronological sequence of Q&A blocks. Each
@@ -201,6 +220,9 @@ block is rendered from the template. By default (English template):
 
 ```markdown
 # 2026/05/27 Wed 11:03:49   Session:My first session:ec5e9974-80a6-4baa-a701-0e29589674da
+Model=claude-opus-4-7 Version=2.1.152
+Branch=main Cwd=C:\Users\satoshi\projects\my-app
+Tokens=in 6, out 33, cache read 21,758, cache write 8,730 Cost=$0.2971
 ## Question
 Hello, can you help me with X?
 <!--
@@ -228,14 +250,20 @@ answers expanded by default.
 - The output is fully regenerated on every run; if you delete a session
   log under `~/.claude/projects/...`, the corresponding pairs disappear
   from `cclog.md` on the next run.
-- **Pre-overwrite backup of the Markdown.** When a run would *fully
-  rewrite* an existing output `.md` (a non-append change — e.g. you ran
-  cclog on a different PC where the synced `.md` no longer matches the
-  local `.jsonl`, or you changed the template), the existing file is first
-  copied to `CCLOG/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<hostname>/` so
-  the previous version is never lost. A plain append (the normal case),
-  an unchanged run, or a first-time create never produces a backup, so
-  these folders only appear when a real overwrite happened.
+- **Pre-overwrite backup of the Markdown.** When a run would rewrite an
+  existing output `.md` *destructively* — at least one Q&A block present
+  in the old file is missing from the new content (its `# YYYY/MM/DD ...`
+  header line no longer appears; e.g. a session's `.jsonl` was deleted,
+  or you ran cclog on a different PC that doesn't see some sessions) —
+  the existing file is first copied to
+  `CCLOG/backup_CCLOG_md/<yyyy-mm-dd_hh-mm-ss>_<hostname>/` so the
+  previous version is never lost. Backup folders accumulate and are never
+  pruned. A plain append (the normal case), an unchanged run, a
+  first-time create, or a rewrite that keeps every block (e.g. a template
+  change below the header line) never produces a backup, so these folders
+  only appear when content actually disappeared. This detection relies on
+  the template's header line — see the warning in *Customizing a
+  template*.
 
 ## License
 
