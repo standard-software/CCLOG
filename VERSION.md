@@ -2,6 +2,10 @@
 
 ## Version
 
+### 1.8.0-beta.1
+#### 2026/07/12(Sun)
+- add per-pair metadata placeholders pulled from the JSONL: `%Model%` (model that produced the answer, synthetic entries skipped), `%Version%` (Claude Code version), `%GitBranch%`, `%Cwd%`, `%Tokens%` (usage summed over the pair's assistant turns), `%Cost%` (rough USD estimate from those tokens; blank for models absent from the pricing table). Bundled templates now carry a folded `Meta:` line inside the `<!-- -->` block, so the visible output is unchanged.
+
 ### 1.7.0
 #### 2026/07/11(Sat)
 - **breaking**: `backup_CCLOG_md/` folders are no longer pruned. Previously the directory was capped at the 20 most recent folders; older ones were deleted after each backup. But each destructive rewrite (e.g. a session whose jsonl was aged out by Claude Code) drops that session's only surviving snapshot into a single backup folder — so pruning could silently discard the last remaining copy of old history. Backups now accumulate without bound; they are the durable archive.

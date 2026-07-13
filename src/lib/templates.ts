@@ -19,6 +19,15 @@
 //                both.
 //   %Answer%     the last assistant text block (already escaped so
 //                "-->" sequences won't close the HTML comment early)
+//   %Model%      model id that produced the answer ("claude-opus-4-8"),
+//                skipping synthetic entries; empty if unknown
+//   %Version%    Claude Code version the pair ran under ("2.1.205")
+//   %GitBranch%  git branch at the time of the question ("main")
+//   %Cwd%        working directory at the time of the question
+//   %Tokens%     token usage summed over the pair's assistant turns
+//                ("in 6, out 33, cache read 21,758, cache write 8,730")
+//   %Cost%       rough USD estimate from those tokens ("$0.0042"); empty
+//                for models absent from the pricing table in metaExtractor.ts
 //
 // Whether — and how verbosely — progress is rendered is decided purely
 // by which placeholder the template contains: none -> no progress,
@@ -30,6 +39,9 @@
 // templates/english.md and is the fallback when nothing else loads.
 
 export const DEFAULT_TEMPLATE = `# %DateTime%   Session:%SessionName%:%SessionId%
+Model=%Model% Version=%Version%
+Branch=%GitBranch% Cwd=%Cwd%
+Tokens=%Tokens% Cost=%Cost%
 ## Question
 %Question%
 <!--
