@@ -2,6 +2,10 @@
 
 ## Version
 
+### 1.8.0-beta.2
+#### 2026/07/14(Tue)
+- fix: log discovery failed (`No session logs found`) for any project whose path contains a character outside `[a-zA-Z0-9]` other than `\` `/` `:` — e.g. `_`, `.`, spaces. `encodeCwd()` only replaced path separators, but Claude Code encodes EVERY non-alphanumeric character as `-` (`...\2026-06-23_Malme_Hajimari` → `...-2026-06-23-Malme-Hajimari`), so cclog searched a folder that doesn't exist. Now mirrors Claude Code's rule exactly.
+
 ### 1.8.0-beta.1
 #### 2026/07/12(Sun)
 - add per-pair metadata placeholders pulled from the JSONL: `%Model%` (model that produced the answer, synthetic entries skipped), `%Version%` (Claude Code version), `%GitBranch%`, `%Cwd%`, `%Tokens%` (usage summed over the pair's assistant turns), `%Cost%` (rough USD estimate from those tokens; blank for models absent from the pricing table). Bundled templates now carry a folded `Meta:` line inside the `<!-- -->` block, so the visible output is unchanged.
