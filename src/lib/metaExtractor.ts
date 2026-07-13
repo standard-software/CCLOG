@@ -110,14 +110,22 @@ export function formatTokens(t: TokenTotals): string {
 }
 
 // Approximate USD pricing per MILLION tokens, standard tier, keyed by a
-// model-id substring. These rates drift over time and vary by tier/region,
-// so %Cost% is a rough estimate, not a bill — edit the table to match
-// current pricing. Anthropic's standard cache multipliers let us derive the
-// rest from the input rate: cache-read ≈ 0.1× input, 5-minute cache-write
-// ≈ 1.25× input, 1-hour cache-write ≈ 2× input. An unrecognized model
-// yields '' (blank) rather than a misleading guess.
+// model-id substring (first match wins — keep specific entries above the
+// generic family fallbacks). These rates drift over time and vary by
+// tier/region, so %Cost% is a rough estimate, not a bill — edit the table
+// to match current pricing. Anthropic's standard cache multipliers let us
+// derive the rest from the input rate: cache-read ≈ 0.1× input, 5-minute
+// cache-write ≈ 1.25× input, 1-hour cache-write ≈ 2× input. An
+// unrecognized model yields '' (blank) rather than a misleading guess.
 const PRICING: Array<{ match: string; input: number; output: number }> = [
-  { match: 'opus', input: 15, output: 75 },
+  { match: 'fable', input: 10, output: 50 },
+  { match: 'mythos', input: 10, output: 50 },
+  // Legacy Opus generations (4.1 and earlier) were $15/$75.
+  { match: 'opus-4-1', input: 15, output: 75 },
+  { match: 'opus-4-2025', input: 15, output: 75 },
+  { match: '3-opus', input: 15, output: 75 },
+  // Current Opus tier (4.5+) is $5/$25.
+  { match: 'opus', input: 5, output: 25 },
   { match: 'sonnet', input: 3, output: 15 },
   { match: 'haiku', input: 1, output: 5 },
 ];

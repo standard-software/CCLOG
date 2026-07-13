@@ -2,6 +2,11 @@
 
 ## Version
 
+### 1.8.0-beta.4
+#### 2026/07/14(Tue)
+- fix `%Cost%` pricing table: add `fable`/`mythos` ($10/$50 per MTok — previously absent, so all Fable pairs rendered `Cost=` empty) and correct the current Opus tier (4.5+) to $5/$25. The old $15/$75 rate applied to opus-4-6/4-7/4-8 was the legacy Opus (≤4.1) price; legacy model ids keep $15/$75. Cost values in already-exported Markdown are recomputed on the next run (non-destructive rewrite).
+- docs: note the accepted same-second identity edge case in both READMEs — two pairs stamped in the same second coexisting is harmless; only "one same-second twin vanishes while the other survives" would go undetected, which is rare enough to accept.
+
 ### 1.8.0-beta.3
 #### 2026/07/14(Tue)
 - destructive-rewrite detection now uses ONLY the `# YYYY/MM/DD Day HH:MM:SS` prefix of each block's header line as the block identity — everything after it on the line (session name/id, metadata) is ignored. The question timestamp is fixed at second precision and never changes for a given pair, so header-line template changes and session renames no longer fire a pointless full backup; a backup now means pairs actually disappeared. (Trade-off: two pairs stamped in the same second share one identity, so a vanished pair could hide behind a same-second survivor — rare enough that predictable backups win.)

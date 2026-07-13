@@ -268,6 +268,13 @@ answers expanded by default.
   only appear when content actually disappeared. This detection relies on
   the template's header line — see the warning in *Customizing a
   template*.
+  One accepted edge case: two pairs stamped in the same second share one
+  identity. The two coexisting is harmless — both are exported and no
+  spurious backup fires. The only theoretical miss is when one of the
+  same-second twins vanishes while the other survives: the survivor still
+  holds that timestamp, so the loss goes undetected and no backup is
+  taken. Second-level collisions where exactly one twin disappears are
+  rare enough that this is accepted in exchange for predictable backups.
 
 ## License
 
