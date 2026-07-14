@@ -2,26 +2,11 @@
 
 ## Version
 
-### 1.8.0-beta.5
+### 1.8.0
 #### 2026/07/14(Tue)
-- remove `%Cost%`: a price computed at render time from a hardcoded rate table goes stale and silently rewrites historical "costs" whenever the table changes — not a fact worth exporting. `%Tokens%` stays (it IS recorded fact); cost can be derived from it externally when needed. A custom template still containing `%Cost%` now renders the literal text.
-
-### 1.8.0-beta.4
-#### 2026/07/14(Tue)
-- fix `%Cost%` pricing table: add `fable`/`mythos` ($10/$50 per MTok — previously absent, so all Fable pairs rendered `Cost=` empty) and correct the current Opus tier (4.5+) to $5/$25. The old $15/$75 rate applied to opus-4-6/4-7/4-8 was the legacy Opus (≤4.1) price; legacy model ids keep $15/$75. Cost values in already-exported Markdown are recomputed on the next run (non-destructive rewrite).
-- docs: note the accepted same-second identity edge case in both READMEs — two pairs stamped in the same second coexisting is harmless; only "one same-second twin vanishes while the other survives" would go undetected, which is rare enough to accept.
-
-### 1.8.0-beta.3
-#### 2026/07/14(Tue)
-- destructive-rewrite detection now uses ONLY the `# YYYY/MM/DD Day HH:MM:SS` prefix of each block's header line as the block identity — everything after it on the line (session name/id, metadata) is ignored. The question timestamp is fixed at second precision and never changes for a given pair, so header-line template changes and session renames no longer fire a pointless full backup; a backup now means pairs actually disappeared. (Trade-off: two pairs stamped in the same second share one identity, so a vanished pair could hide behind a same-second survivor — rare enough that predictable backups win.)
-
-### 1.8.0-beta.2
-#### 2026/07/14(Tue)
-- fix: log discovery failed (`No session logs found`) for any project whose path contains a character outside `[a-zA-Z0-9]` other than `\` `/` `:` — e.g. `_`, `.`, spaces. `encodeCwd()` only replaced path separators, but Claude Code encodes EVERY non-alphanumeric character as `-` (`...\2026-06-23_Malme_Hajimari` → `...-2026-06-23-Malme-Hajimari`), so cclog searched a folder that doesn't exist. Now mirrors Claude Code's rule exactly.
-
-### 1.8.0-beta.1
-#### 2026/07/12(Sun)
-- add per-pair metadata placeholders pulled from the JSONL: `%Model%` (model that produced the answer, synthetic entries skipped), `%Version%` (Claude Code version), `%GitBranch%`, `%Cwd%`, `%Tokens%` (usage summed over the pair's assistant turns), `%Cost%` (rough USD estimate from those tokens; blank for models absent from the pricing table). Bundled templates now carry a folded `Meta:` line inside the `<!-- -->` block, so the visible output is unchanged.
+- add per-pair metadata placeholders pulled from the JSONL: `%Model%` (model that produced the answer, synthetic entries skipped), `%Version%` (Claude Code version), `%GitBranch%`, `%Cwd%`, `%Tokens%` (usage summed over the pair's assistant turns). Bundled templates now show a 3-line metadata block right under the pair header.
+- fix: log discovery failed (`No session logs found`) for any project whose path contains `_`, `.`, spaces, etc. — Claude Code encodes EVERY non-alphanumeric character as `-`, but `encodeCwd()` only replaced `\` `/` `:`. Now mirrors Claude Code's rule exactly.
+- destructive-rewrite detection keys each block on the `# YYYY/MM/DD Day HH:MM:SS` timestamp prefix only — everything after it on the header line is ignored. Template changes and session renames no longer fire pointless backups; a backup now means pairs actually disappeared. (Known edge: same-second pairs share an identity — see README.)
 
 ### 1.7.0
 #### 2026/07/11(Sat)
