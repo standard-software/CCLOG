@@ -2,6 +2,10 @@
 
 ## Version
 
+### 1.8.1
+#### 2026/07/15(Wed)
+- bundled templates: add a blank line between `%Question%` and the `<!--` that opens the folded Answer block. Without it, VS Code's Markdown renderer can mis-parse the comment start when it directly follows the question text.
+
 ### 1.8.0
 #### 2026/07/14(Tue)
 - add per-pair metadata placeholders pulled from the JSONL: `%Model%` (model that produced the answer, synthetic entries skipped), `%Version%` (Claude Code version), `%GitBranch%`, `%Cwd%`, `%Tokens%` (usage summed over the pair's assistant turns). Bundled templates now show a 3-line metadata block right under the pair header.

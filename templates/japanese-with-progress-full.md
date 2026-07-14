@@ -4,6 +4,7 @@ Branch=%GitBranch% Cwd=%Cwd%
 Tokens=%Tokens%
 ## 質問
 %Question%
+
 <!--
 ## 経過
 %ProgressFull%
