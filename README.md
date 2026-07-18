@@ -108,7 +108,6 @@ to customize behavior:
   "extraLogDirs": [],
   "recursive": false,
   "includeSidechain": false,
-  "recoverSlashCommandBody": true,
   "outputAllFileName": "cclog.md",
   "outputSessionFilePrefix": "cclog_",
   "template": "templates/japanese.md"
@@ -124,7 +123,6 @@ paths on Ubuntu/macOS (`/home/you/...`).
 | `extraLogDirs`            | Additional raw `~/.claude/projects/...` directories to read verbatim.       |
 | `recursive`               | If `true`, descend into subdirectories of each log dir (e.g. subagent logs).|
 | `includeSidechain`        | If `true`, include subagent / sidechain pairs in the output.                |
-| `recoverSlashCommandBody` | If `true` (default), restore a slash-command question whose injected body Claude Code truncated in the log, using the full text from the Read of the command's own `commands/<name>.md`. |
 | `outputAllFileName`       | Filename for the aggregated output. Default `cclog.md`. The title inside the file is derived from the basename (e.g. setting `mylog.md` also changes the header to `# mylog`). |
 | `outputSessionFilePrefix` | Prefix for per-session filenames (used with `--per-session`). Default `cclog_`, so files are `cclog_<sessionId>.md`. Empty string means no prefix. |
 | `template`                | Path to a Markdown template. Resolved against cclog's own `templates/` dir first, then your CCLOG dir. |

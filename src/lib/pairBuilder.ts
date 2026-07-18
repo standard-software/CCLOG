@@ -168,11 +168,10 @@ export function recoverSlashCommandBodies(pairs: Pair[]): void {
 
 export interface BuildPairsOptions {
   includeSidechain?: boolean;
-  recoverSlashCommandBody?: boolean;
 }
 
 export function buildPairs(entries: LogEntry[], options: BuildPairsOptions = {}): Pair[] {
-  const { includeSidechain = false, recoverSlashCommandBody = true } = options;
+  const { includeSidechain = false } = options;
   const pairs: Pair[] = [];
   let current: Pair | null = null;
 
@@ -272,6 +271,10 @@ export function buildPairs(entries: LogEntry[], options: BuildPairsOptions = {})
   // <!-- --> wrapper.
   if (current) pairs.push(current);
 
-  if (recoverSlashCommandBody) recoverSlashCommandBodies(pairs);
+  // Always restore slash-command bodies Claude Code truncated in the log.
+  // The substitution is conservative — it only replaces a stored body that
+  // is a strict prefix of (and shorter than) the command file's own text,
+  // so a complete body is never altered. There is nothing to opt out of.
+  recoverSlashCommandBodies(pairs);
   return pairs;
 }

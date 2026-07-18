@@ -2,6 +2,10 @@
 
 ## Version
 
+### 1.9.0-beta.1
+#### 2026/07/19(Sun)
+- remove the `recoverSlashCommandBody` config option. Recovering slash-command questions that Claude Code truncated in the log is now always on and can no longer be turned off. The substitution has always been conservative — it only replaces a stored body that is a strict, shorter prefix of the command file's own text, so a complete body is never altered — which left nothing to opt out of. A `recoverSlashCommandBody` key in `cclog.config.json` is now silently ignored.
+
 ### 1.8.1
 #### 2026/07/15(Wed)
 - bundled templates: add a blank line between `%Question%` and the `<!--` that opens the folded Answer block. Without it, VS Code's Markdown renderer can mis-parse the comment start when it directly follows the question text.

@@ -233,7 +233,6 @@ function sessionIdFor(file: DiscoveredFile): string {
 async function readAllSessions(
   files: DiscoveredFile[],
   includeSidechain: boolean,
-  recoverSlashCommandBody: boolean,
 ): Promise<SessionData[]> {
   const out: SessionData[] = [];
   for (const f of files) {
@@ -242,7 +241,7 @@ async function readAllSessions(
       sessionId: sessionIdFor(f),
       sessionName: extractSessionName(r.entries),
       jsonlPath: f.filePath,
-      allPairs: buildPairs(r.entries, { includeSidechain, recoverSlashCommandBody }),
+      allPairs: buildPairs(r.entries, { includeSidechain }),
       skippedLines: r.skippedLines,
     });
   }
@@ -441,7 +440,6 @@ async function processProject(opts: CliOptions): Promise<void> {
       if (config.extraLogDirs.length) console.log(`  extraLogDirs:            ${config.extraLogDirs.length}`);
       console.log(`  recursive:               ${config.recursive}`);
       console.log(`  includeSidechain:        ${config.includeSidechain}`);
-      console.log(`  recoverSlashCommandBody: ${config.recoverSlashCommandBody}`);
       console.log(`  outputAllFileName:       ${config.outputAllFileName}`);
       console.log(`  outputSessionFilePrefix: ${config.outputSessionFilePrefix}`);
     }
@@ -492,7 +490,7 @@ async function processProject(opts: CliOptions): Promise<void> {
     await cleanupLegacyStateFiles(opts.outDir, opts.verbose);
   }
 
-  const sessions = await readAllSessions(files, config.includeSidechain, config.recoverSlashCommandBody);
+  const sessions = await readAllSessions(files, config.includeSidechain);
   const formatOpts = {
     template: config.template,
   };
