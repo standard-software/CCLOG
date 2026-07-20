@@ -1,5 +1,6 @@
 .vscode/
 .claude
+.codex
 
 # Node / TypeScript
 node_modules/
@@ -15,8 +16,9 @@ build/
 .env.*
 .npmrc
 
-# cclog runtime artifacts (per-user, never commit)
+# cclog / cxlog runtime artifacts (per-user, never commit)
 CCLOG/
+CXLOG/
 CCLogs/
 _test_out/
 
