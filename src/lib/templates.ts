@@ -68,9 +68,12 @@ export function progressMode(tpl: string): ProgressMode {
 }
 
 export function renderTemplate(tpl: string, vars: Record<string, string>): string {
-  let out = tpl;
-  for (const [k, v] of Object.entries(vars)) {
-    out = out.replaceAll(`%${k}%`, v);
-  }
-  return out;
+  // Single pass over the ORIGINAL template: every %Name% is replaced at most
+  // once, so a value inserted for one placeholder (e.g. a question body that
+  // literally contains "%Answer%") is never re-scanned and re-substituted by a
+  // later variable. Unknown %Name% tokens are left as-is. The function replacer
+  // inserts the value literally — $&, $1, $$ in a value are NOT special.
+  return tpl.replace(/%([A-Za-z][A-Za-z0-9]*)%/g, (match, name: string) =>
+    Object.prototype.hasOwnProperty.call(vars, name) ? vars[name] : match,
+  );
 }
