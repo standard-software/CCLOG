@@ -2,17 +2,12 @@
 
 ## Version
 
-### 1.9.0-beta.3
+### 1.9.0
 #### 2026/07/21(Tue)
-- add the `includeSubdirectories` config option (default `true`): running cclog in a project directory now also collects logs from projects whose cwd is a *subdirectory* of it — e.g. running in `~/work/app` also picks up `~/work/app/frontend` and any deeper nested project. Candidates are found by the encoded log-folder-name prefix and then confirmed against each session's real `cwd`, so same-prefix siblings (e.g. `~/work/app-backup`) are never pulled in. Set to `false` to restore the pre-1.9 behavior of matching only the exact project path (plus `extraCwds` / `extraLogDirs`).
-
-### 1.9.0-beta.2
-#### 2026/07/21(Tue)
+- add the `includeSubdirectories` config option (default `true`): running cclog in a project directory now also collects logs from projects whose cwd is a *subdirectory* of it — e.g. running in `~/work/app` also picks up `~/work/app/frontend` and any deeper nested project. Candidates are found by the encoded log-folder-name prefix and then confirmed against each session's real `cwd`, so same-prefix siblings (e.g. `~/work/app-backup`) are never pulled in. Set to `false` to match only the exact project path (plus `extraCwds` / `extraLogDirs`), as before.
+- aggregate output (`cclog.md`) now de-duplicates pairs copied by a resumed or forked session. Claude Code writes the earlier history verbatim into the new session file, so the same turn would otherwise appear once per session file. A pair is dropped when any of its message uuids (question, steering follow-ups, or answer) was already emitted by an earlier pair — the answer's uuid is checked too, since a session-specific extra message can regroup the same shared turn so the question side looks different while the answer is the very same message. Matching is by uuid, so it is lossless (a uuid is unique per message; a hit is always a fork copy, never two distinct turns). Always on. `--per-session` output is intentionally left un-deduplicated so each session file stays a complete transcript.
+- remove the `recoverSlashCommandBody` config option: recovering slash-command questions that Claude Code truncated in the log is now always on. The substitution only ever replaced a stored body that is a strict, shorter prefix of the command file's own text, so a complete body is never altered — there was nothing to opt out of. A `recoverSlashCommandBody` key in `cclog.config.json` is now silently ignored.
 - fix: template rendering is now a single pass, so a literal placeholder token (e.g. `%SessionName%`) that appears inside the question or answer text is no longer re-substituted after it lands in the output.
-
-### 1.9.0-beta.1
-#### 2026/07/19(Sun)
-- remove the `recoverSlashCommandBody` config option. Recovering slash-command questions that Claude Code truncated in the log is now always on and can no longer be turned off. The substitution has always been conservative — it only replaces a stored body that is a strict, shorter prefix of the command file's own text, so a complete body is never altered — which left nothing to opt out of. A `recoverSlashCommandBody` key in `cclog.config.json` is now silently ignored.
 
 ### 1.8.1
 #### 2026/07/15(Wed)

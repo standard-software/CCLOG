@@ -603,9 +603,40 @@ async function processProject(opts: CliOptions): Promise<void> {
     return ta - tb;
   });
 
+  // Cross-session de-duplication (aggregate output only). When a session is
+  // resumed or forked, Claude Code copies the earlier conversation verbatim
+  // into the new session file, so the same message — identical `uuid` — can
+  // appear in more than one session. A pair is a fork duplicate if ANY of its
+  // messages (the question, its steering follow-ups, or the answer) carries a
+  // uuid already emitted by an earlier pair. We check all of them, not just the
+  // question, because a session-specific extra message can shift how the same
+  // shared turn gets grouped — the question side may look different while the
+  // answer is the very same message. Keeping the first (earliest, since already
+  // sorted) occurrence is lossless: a uuid is unique per message, so a hit is
+  // always the same message copied by a fork, never two distinct turns.
+  // Pairs whose messages all lack a uuid are never treated as duplicates.
+  // Per-session output above is intentionally NOT de-duplicated, so each
+  // session file stays a complete transcript of its own session.
+  const seenUuids = new Set<string>();
+  let duplicatePairs = 0;
+  const dedupedItems = items.filter(it => {
+    const p = it.pair;
+    const keys: string[] = [];
+    if (p.questionEntry.uuid) keys.push(p.questionEntry.uuid);
+    for (const q of p.additionalQuestionEntries) if (q.uuid) keys.push(q.uuid);
+    if (p.finalAssistantEntry?.uuid) keys.push(p.finalAssistantEntry.uuid);
+    if (keys.length === 0) return true;
+    if (keys.some(k => seenUuids.has(k))) {
+      duplicatePairs++;
+      return false;
+    }
+    for (const k of keys) seenUuids.add(k);
+    return true;
+  });
+
   const content =
     buildAllInOneFileHeader(opts.projectPath, config.outputAllFileName) +
-    items.map(it => formatPair(it.pair, formatOpts, it.sessionId, it.sessionName)).join('');
+    dedupedItems.map(it => formatPair(it.pair, formatOpts, it.sessionId, it.sessionName)).join('');
 
   const filePath = path.join(opts.outDir, config.outputAllFileName);
   let result: WriteResult | 'dry-run' = 'dry-run';
@@ -623,7 +654,10 @@ async function processProject(opts: CliOptions): Promise<void> {
   if (backedUp && mdBackupDir) {
     console.log(`Backed up 1 pre-overwrite md file to ${mdBackupDir}`);
   }
-  console.log(`Done. ${items.length} pair(s) total [${result}]${opts.dryRun ? ' (dry run)' : ''}.`);
+  const dupNote = duplicatePairs
+    ? ` (${duplicatePairs} duplicate pair(s) from resumed/forked sessions removed)`
+    : '';
+  console.log(`Done. ${dedupedItems.length} pair(s) total [${result}]${dupNote}${opts.dryRun ? ' (dry run)' : ''}.`);
 }
 
 const DEFAULT_TEMPLATE_REL = 'templates/english.md';
