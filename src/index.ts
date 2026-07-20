@@ -3,7 +3,11 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { createRequire } from 'node:module';
-import { getLogDirForProject } from './lib/pathResolver.js';
+import {
+  getLogDirForProject,
+  findSubdirLogDirCandidates,
+  isPathWithin,
+} from './lib/pathResolver.js';
 import { readJsonl } from './lib/jsonlReader.js';
 import { buildPairs, extractSessionName } from './lib/pairBuilder.js';
 import { loadConfig, PACKAGE_ROOT, CONFIG_FILE_NAME } from './lib/config.js';
@@ -173,6 +177,29 @@ async function listSessionFiles(logDir: string, recursive = false): Promise<stri
     if (err.code === 'ENOENT') return [];
     throw e;
   }
+}
+
+// Read a representative cwd for a log dir by scanning its session files until
+// an entry carrying a `cwd` is found. A Claude Code project folder maps to a
+// single cwd (the folder name is that cwd, encoded), so the first cwd found is
+// authoritative for the whole folder. Used to confirm a prefix-matched
+// subdirectory candidate is genuinely nested under the project (and not a
+// same-prefix sibling). Returns undefined if no cwd is present anywhere.
+async function firstLoggedCwd(logDir: string): Promise<string | undefined> {
+  const files = await listSessionFiles(logDir, false);
+  for (const file of files) {
+    let entries;
+    try {
+      ({ entries } = await readJsonl(file));
+    } catch {
+      continue;
+    }
+    for (const e of entries) {
+      const cwd = (e as { cwd?: unknown }).cwd;
+      if (typeof cwd === 'string' && cwd) return cwd;
+    }
+  }
+  return undefined;
 }
 
 async function rmIfExists(filePath: string): Promise<void> {
@@ -423,8 +450,25 @@ async function processProject(opts: CliOptions): Promise<void> {
     }
   }
 
+  // Nested projects: unless disabled, also pull in logs from projects whose
+  // cwd is a subdirectory of the project path (or its realpath). Candidates
+  // are found by folder-name prefix — which, because of Claude Code's lossy
+  // encoding, can also match same-prefix siblings — so each is confirmed
+  // against the real cwd recorded in its logs before being included.
+  const subdirLogDirs: string[] = [];
+  if (config.includeSubdirectories) {
+    const bases = Array.from(new Set([opts.projectPath, realProjectPath]));
+    const candidates = await findSubdirLogDirCandidates(bases);
+    for (const d of candidates) {
+      if (logDirs.includes(d)) continue;
+      const cwd = await firstLoggedCwd(d);
+      if (cwd && bases.some(b => isPathWithin(cwd, b))) subdirLogDirs.push(d);
+    }
+  }
+
+  const allLogDirs = [...logDirs, ...subdirLogDirs];
   const files: DiscoveredFile[] = [];
-  for (const d of logDirs) {
+  for (const d of allLogDirs) {
     const found = await listSessionFiles(d, config.recursive);
     for (const f of found) files.push({ filePath: f, logDir: d });
   }
@@ -440,6 +484,7 @@ async function processProject(opts: CliOptions): Promise<void> {
       if (config.extraLogDirs.length) console.log(`  extraLogDirs:            ${config.extraLogDirs.length}`);
       console.log(`  recursive:               ${config.recursive}`);
       console.log(`  includeSidechain:        ${config.includeSidechain}`);
+      console.log(`  includeSubdirectories:   ${config.includeSubdirectories}`);
       console.log(`  outputAllFileName:       ${config.outputAllFileName}`);
       console.log(`  outputSessionFilePrefix: ${config.outputSessionFilePrefix}`);
     }
@@ -454,6 +499,10 @@ async function processProject(opts: CliOptions): Promise<void> {
         const mark = logDirs.includes(d) ? '+' : '-';
         console.log(`  ${mark} ${d}`);
       }
+    }
+    if (subdirLogDirs.length) {
+      console.log(`Subdirectory projects (${subdirLogDirs.length}, cwd-verified):`);
+      for (const d of subdirLogDirs) console.log(`  + ${d}`);
     }
     console.log(`Out dir: ${opts.outDir}`);
     console.log(`Mode:    ${opts.perSession ? 'per-session' : `aggregate (${config.outputAllFileName})`}`);

@@ -2,6 +2,14 @@
 
 ## Version
 
+### 1.9.0-beta.3
+#### 2026/07/21(Tue)
+- add the `includeSubdirectories` config option (default `true`): running cclog in a project directory now also collects logs from projects whose cwd is a *subdirectory* of it — e.g. running in `~/work/app` also picks up `~/work/app/frontend` and any deeper nested project. Candidates are found by the encoded log-folder-name prefix and then confirmed against each session's real `cwd`, so same-prefix siblings (e.g. `~/work/app-backup`) are never pulled in. Set to `false` to restore the pre-1.9 behavior of matching only the exact project path (plus `extraCwds` / `extraLogDirs`).
+
+### 1.9.0-beta.2
+#### 2026/07/21(Tue)
+- fix: template rendering is now a single pass, so a literal placeholder token (e.g. `%SessionName%`) that appears inside the question or answer text is no longer re-substituted after it lands in the output.
+
 ### 1.9.0-beta.1
 #### 2026/07/19(Sun)
 - remove the `recoverSlashCommandBody` config option. Recovering slash-command questions that Claude Code truncated in the log is now always on and can no longer be turned off. The substitution has always been conservative — it only replaces a stored body that is a strict, shorter prefix of the command file's own text, so a complete body is never altered — which left nothing to opt out of. A `recoverSlashCommandBody` key in `cclog.config.json` is now silently ignored.

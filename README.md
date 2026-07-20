@@ -108,6 +108,7 @@ to customize behavior:
   "extraLogDirs": [],
   "recursive": false,
   "includeSidechain": false,
+  "includeSubdirectories": true,
   "outputAllFileName": "cclog.md",
   "outputSessionFilePrefix": "cclog_",
   "template": "templates/japanese.md"
@@ -123,6 +124,7 @@ paths on Ubuntu/macOS (`/home/you/...`).
 | `extraLogDirs`            | Additional raw `~/.claude/projects/...` directories to read verbatim.       |
 | `recursive`               | If `true`, descend into subdirectories of each log dir (e.g. subagent logs).|
 | `includeSidechain`        | If `true`, include subagent / sidechain pairs in the output.                |
+| `includeSubdirectories`   | If `true` (default), also collect logs from projects whose cwd is a *subdirectory* of the project cclog runs in (e.g. running in `~/work/app` also gathers `~/work/app/frontend`). Nested candidates are verified against each session's real cwd, so same-prefix siblings like `~/work/app-backup` are never included. Set `false` to match only the exact project path (plus `extraCwds` / `extraLogDirs`). |
 | `outputAllFileName`       | Filename for the aggregated output. Default `cclog.md`. The title inside the file is derived from the basename (e.g. setting `mylog.md` also changes the header to `# mylog`). |
 | `outputSessionFilePrefix` | Prefix for per-session filenames (used with `--per-session`). Default `cclog_`, so files are `cclog_<sessionId>.md`. Empty string means no prefix. |
 | `template`                | Path to a Markdown template. Resolved against cclog's own `templates/` dir first, then your CCLOG dir. |

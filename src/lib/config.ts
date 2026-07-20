@@ -15,6 +15,16 @@ export interface CclogConfig {
   recursive: boolean;
   includeSidechain: boolean;
   /**
+   * When `true` (the default), also collect logs from projects whose cwd is a
+   * subdirectory of the project cclog is run in — e.g. running cclog in
+   * `~/work/app` also picks up `~/work/app/frontend` and any deeper nested
+   * project. Set to `false` to restore the pre-1.9 behavior of matching only
+   * the exact project path (plus `extraCwds` / `extraLogDirs`). Nested
+   * candidates are verified against each session's real cwd, so unrelated
+   * sibling projects (e.g. `~/work/app-backup`) are never pulled in.
+   */
+  includeSubdirectories: boolean;
+  /**
    * Filename for the aggregated Markdown output (default `cclog.md`).
    * The header title inside the file is derived from this basename.
    * Set to "CCLOG_ALL.md" to keep the pre-1.6.0 filename.
@@ -40,6 +50,7 @@ export const DEFAULT_CONFIG: CclogConfig = {
   extraLogDirs: [],
   recursive: false,
   includeSidechain: false,
+  includeSubdirectories: true,
   outputAllFileName: 'cclog.md',
   outputSessionFilePrefix: 'cclog_',
   template: DEFAULT_TEMPLATE,
@@ -98,6 +109,7 @@ export async function loadConfig(outDir: string): Promise<{
     extraLogDirs: asStringArray(obj.extraLogDirs),
     recursive: asBool(obj.recursive, DEFAULT_CONFIG.recursive),
     includeSidechain: asBool(obj.includeSidechain, DEFAULT_CONFIG.includeSidechain),
+    includeSubdirectories: asBool(obj.includeSubdirectories, DEFAULT_CONFIG.includeSubdirectories),
     outputAllFileName: asNonEmptyString(obj.outputAllFileName, DEFAULT_CONFIG.outputAllFileName),
     outputSessionFilePrefix: typeof obj.outputSessionFilePrefix === 'string'
       ? obj.outputSessionFilePrefix
