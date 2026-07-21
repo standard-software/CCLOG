@@ -2,6 +2,10 @@
 
 ## Version
 
+### 1.9.1
+#### 2026/07/22(Wed)
+- docs: add a migration notice to both READMEs pointing to the successor package **[`@standard-software/ccxlog`](https://www.npmjs.com/package/@standard-software/ccxlog)**. cclog handles Claude Code logs only; ccxlog exports both Claude Code and Codex CLI logs from one command (`ccxlog -cc` is near-equivalent to cclog, `ccxlog -cx` handles Codex, default merges both). Active development moves to ccxlog — please migrate.
+
 ### 1.9.0
 #### 2026/07/21(Tue)
 - add the `includeSubdirectories` config option (default `true`): running cclog in a project directory now also collects logs from projects whose cwd is a *subdirectory* of it — e.g. running in `~/work/app` also picks up `~/work/app/frontend` and any deeper nested project. Candidates are found by the encoded log-folder-name prefix and then confirmed against each session's real `cwd`, so same-prefix siblings (e.g. `~/work/app-backup`) are never pulled in. Set to `false` to match only the exact project path (plus `extraCwds` / `extraLogDirs`), as before.

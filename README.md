@@ -2,6 +2,19 @@
 
 **Language:** [Japanese/日本語](README_Japanese.md)
 
+> ### 📦 cclog is moving to `ccxlog` — please migrate
+>
+> **[`@standard-software/ccxlog`](https://www.npmjs.com/package/@standard-software/ccxlog)** is the successor to cclog. Where **cclog handles Claude Code logs only**, **ccxlog exports both Claude Code and Codex CLI logs** from a single command — and can merge them into one timeline.
+>
+> - `ccxlog -cc` (Claude Code only) is (near-)equivalent to `cclog`.
+> - `ccxlog -cx` handles Codex; the default merges both.
+>
+> Active development continues on **ccxlog**, so please switch over from cclog:
+>
+> ```bash
+> npm install -g @standard-software/ccxlog
+> ```
+
 Export Claude Code session logs (JSONL) to a single readable Markdown file.
 
 `cclog` reads the JSONL session logs that Claude Code writes under
